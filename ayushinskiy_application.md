@@ -21,10 +21,10 @@
 
 Аппаратные требования исключительно примерны, к моменту сдачи они скорее всего будут ниже
 
-* Internet Explorer 8 и выше
-* Opera 10.0 и выше
-* Google Chrome 18.0 и выше
-* Mozilla Firefox 13.0 и выше
+* Internet Explorer 11
+* Opera 24 и выше
+* Google Chrome 94 и выше
+* Mozilla Firefox 92 и выше
 
 **[ ФУНКЦИОНАЛЬНЫЕ ТРЕБОВАНИЯ ]**
 
