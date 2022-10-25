@@ -1,14 +1,13 @@
-from flask import Flask, render_template, url_for, request, flash, session, redirect, abort, g, make_response, jsonify
-from flask_sqlalchemy import SQLAlchemy
+from flask import render_template, url_for, redirect
+# Скрипт, определяющий базу данных, импортируются таблицы
 from database_creater import Users, Songs, Groups, Users_choices_songs, Users_choices_groups, Groups_Songs, Events, create_db, app, db
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+# Скрипт WTForms определяющий forms, упрощающий с ними работу
 from forms_manager import Log_in_form, Sign_up_form, Add_song, Add_group
+# Скрипт, для получения данных о пользователе
 from login_user import User_login
 from flask_socketio import SocketIO, emit
-import os
-import requests
-
 
 login_manager = LoginManager(app)
 login_manager.login_view = '/log_in'
@@ -20,7 +19,7 @@ socketio.init_app(app)
 
 voting_songs_or_groups = 'groups'
 
-
+# список ролей и уровень их доступа
 access_accordance = (
     {'name': 'user', 'level': 0},
     {'name': 'designer', 'level': 1},
@@ -33,27 +32,18 @@ access_accordance = (
     {'name': 'admin', 'level': 2},
     {'name': 'chief', 'level': 3})
 
-menu = (
-    {'title': 'Зарегистрироваться', 'url': '/sign_up'},
-    {'title': 'Войти', 'url': '/log_in'},
-    {'title': 'Выйти', 'url': '/log_out'},
-    {'title': 'Голосование', 'url': '/voting'},
-    {'title': 'Профиль', 'url': '/profile'},
-    {'title': 'Добавить тему', 'url': '/add_group'},
-    {'title': 'Проверить темы', 'url': '/approve_groups'},
-    {'title': 'Добавить песню', 'url': '/add_song'},
-    {'title': 'Проверить песни', 'url': '/approve_songs'})
 
+# id выбранной на прошлом голосовании темы
 selected_group = 1
 
 
-
+# Определяем пользователя
 @login_manager.user_loader
 def load_user(user_id):
     print('load_user ' + user_id)
     return User_login().fromDB(Users.query.filter_by(id=user_id).first())
 
-
+# Главная страница, перебрасывающая нас на проходяещее голосование
 @app.route('/')
 @app.route('/voting')
 @login_required
@@ -64,14 +54,21 @@ def voting():
         return redirect(url_for('voting_groups'))
 
 
+# Отправляем страницу голосования за песни
 @app.route('/voting_songs')
 @login_required
 def voting_songs():
-    songs = Songs.query.order_by(Songs.recent_likes.desc()).all()
+    if voting_songs_or_groups == 'groups':
+        return redirect(url_for('voting'))
+    songs = []
+    for song in Songs.query.order_by(Songs.recent_likes.desc()).all():
+        if Groups_Songs.query.filter_by(song_id=song.id).filter_by(group_id=selected_group).count() > 0:
+            songs.append(song)
     return render_template('voting_songs.html', selected_group=Groups.query.filter_by(id=selected_group).first().title,
                            voting_songs_or_groups=voting_songs_or_groups, songs=songs)
 
 
+# Отправляем страницу голосования за тему
 @app.route('/voting_groups')
 @login_required
 def voting_groups():
@@ -79,6 +76,9 @@ def voting_groups():
     return render_template('voting_groups.html',  voting_songs_or_groups=voting_songs_or_groups, groups=groups)
 
 
+# Завершаем голосование и переходим к следующему
+# Функция доступна только пользователям 2 и выше уровня
+# Возвращает все временные переменные к изначальным значениям
 @app.route('/change_voting')
 @login_required
 def change_voting():
@@ -104,6 +104,7 @@ def change_voting():
             return redirect(url_for('voting_songs'))
 
 
+# JS функция отвечающая за выставление пользователем оценки песни
 @socketio.on('likes songs')
 def likes_songs(data):
     another_choice = Users_choices_songs.query.filter_by(user_id=current_user.get_id()).filter_by(song_id=data[0])
@@ -135,9 +136,11 @@ def likes_songs(data):
         db.session.flush()
         db.session.commit()
     count = Songs.query.filter_by(id=data[0]).first().recent_likes
-    emit("vote totals songs", [count, data[0], current_user.get_bells()], broadcast=True)
+    emit("vote totals songs", [count, data[0]], broadcast=True)
+    emit('show bells', data=1, broadcast=True)
 
 
+# JS функция отвечающая за выставление пользователем оценки теме
 @socketio.on('likes groups')
 def likes_groups(data):
     another_choice = Users_choices_groups.query.filter_by(user_id=current_user.get_id()).filter_by(group_id=data[0])
@@ -169,9 +172,12 @@ def likes_groups(data):
         db.session.flush()
         db.session.commit()
     count = Groups.query.filter_by(id=data[0]).first().recent_likes
-    emit("vote totals groups", [count, data[0], current_user.get_bells()], broadcast=True)
+    emit("vote totals groups", [count, data[0]], broadcast=True)
+    emit('show bells', data=1, broadcast=True)
 
 
+# Отправляем страницу добавления песни
+# Обрабатываем попытку добавить песню
 @app.route('/add_song', methods=('POST', 'GET'))
 @login_required
 def add_song():
@@ -199,6 +205,8 @@ def add_song():
     return render_template('add_song.html', voting_songs_or_groups=voting_songs_or_groups, form=form)
 
 
+# Отправляем страницу добавления темы
+# Обрабатываем попытку добавить тему
 @app.route('/add_group', methods=('POST', 'GET'))
 @login_required
 def add_group():
@@ -216,24 +224,36 @@ def add_group():
     return render_template('add_group.html', voting_songs_or_groups=voting_songs_or_groups, form=form)
 
 
+# Отправляем все список предложенных песен
+# Функция доступна только пользователям 2 и выше уровня
 @app.route('/approve_songs')
 @login_required
 def approve_songs():
-    return render_template('approve_songs.html', voting_songs_or_groups=voting_songs_or_groups, songs=Songs.query.filter_by(approved=0).order_by(Songs.likes).all())
+    if current_user.get_position() in ['chief', 'admin']:
+        return render_template('approve_songs.html', voting_songs_or_groups=voting_songs_or_groups, songs=Songs.query.filter_by(approved=0).order_by(Songs.likes).all())
+    else:
+        return redirect(url_for('voting'))
 
 
+# Отправляем все список предложенных тем
+# Функция доступна только пользователям 2 и выше уровня
 @app.route('/approve_groups')
 @login_required
 def approve_groups():
-    return render_template('approve_groups.html', voting_songs_or_groups=voting_songs_or_groups, groups=Groups.query.filter_by(approved=0).order_by(Groups.likes).all())
+    if current_user.get_position() in ['chief', 'admin']:
+        return render_template('approve_groups.html', voting_songs_or_groups=voting_songs_or_groups, groups=Groups.query.filter_by(approved=0).order_by(Groups.likes).all())
+    else:
+        return redirect(url_for('voting'))
 
 
+# JS функция подтверждения добавления песни
 @socketio.on('approve song')
-@login_required
 def approve_song(data):
     song = Songs.query.filter_by(id=data[0]).first()
+    approved = 0
     song.approved = 1
     if data[1] == 'Yes':
+        approved = 1
         gs = Groups_Songs(song_id=data[0], group_id=selected_group)
         db.session.add(gs)
     elif Groups_Songs.query.filter_by(song_id=data[0]).count() == 0:
@@ -242,37 +262,63 @@ def approve_song(data):
         db.session.delete(song)
     db.session.flush()
     db.session.commit()
-    emit("is approve song", [data[0]], broadcast=True)
+    emit("is approve song", [data[0], approved], broadcast=True)
+    emit('show bells', data=1, broadcast=True)
 
 
+# JS функция подтверждения добавления темы
 @socketio.on('approve group')
-@login_required
 def approve_group(data):
     group = Groups.query.filter_by(id=data[0]).first()
+    approved = 1
     group.approved = 1
     if data[1] == 'No':
+        approved = 0
         return_bells_by_group(data[0])
         group.recent_bells = 0
         db.session.delete(group)
     db.session.flush()
     db.session.commit()
-    emit("is approve group", [data[0]], broadcast=True)
+    emit("is approve group", [data[0], approved], broadcast=True)
+    emit('show bells', data=1, broadcast=True)
 
 
+@socketio.on('get bells')
+def get_bells():
+    emit('show bells self', current_user.get_bells())
+
+
+# Страница песни по id
 @app.route('/song/<id>')
 def song(id):
-    return render_template('song.html', song=Songs.query.filter_by(id=id).first(), voting_songs_or_groups=voting_songs_or_groups)
+    groups = []
+    for group in Groups_Songs.query.filter_by(song_id=id).all():
+        groups.append(Groups.query.filter_by(id=group.group_id).first())
+    return render_template('song.html', song=Songs.query.filter_by(id=id).first(), groups=groups, voting_songs_or_groups=voting_songs_or_groups)
 
 
+# Страница темы по id
+@app.route('/group/<id>')
+def group(id):
+    songs = []
+    for song in Groups_Songs.query.filter_by(group_id=id).all():
+        songs.append(Songs.query.filter_by(id=song.song_id).first())
+    return render_template('group.html', group=Groups.query.filter_by(id=id).first(), songs=songs, voting_songs_or_groups=voting_songs_or_groups)
+
+
+# Вспомогательная функция, возвращающая bell-ы пользователям при не подтверждении песни за которую они голосовали
 def return_bells_by_song(id):
     for choice in Users_choices_songs.query.filter_by(song_id=id):
         Users.query.filter_by(id=choice.user_id).first().bells += abs(choice.choice)
 
+# Вспомогательная функция, возвращающая bell-ы пользователям при не подтверждении темы за которую они голосовали
 def return_bells_by_group(id):
     for choice in Users_choices_groups.query.filter_by(group_id=id):
+        print('reterns ' + str(abs(choice.choice)) + ' bells to ' + str(Users.query.filter_by(id=choice.user_id).first().id))
         Users.query.filter_by(id=choice.user_id).first().bells += abs(choice.choice)
 
 
+# Регистрация
 @app.route("/sign_up", methods=("POST", "GET"))
 def sign_up():
     form = Sign_up_form()
@@ -293,6 +339,7 @@ def sign_up():
     return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form)
 
 
+# Вход
 @app.route('/log_in', methods=('POST', 'GET'))
 def log_in():
     if current_user.is_authenticated:
@@ -307,6 +354,7 @@ def log_in():
     return render_template('log_in.html', voting_songs_or_groups=voting_songs_or_groups, form=form)
 
 
+# Выход
 @app.route('/log_out', methods=('POST', 'GET'))
 @login_required
 def log_out():
@@ -314,12 +362,14 @@ def log_out():
     return redirect(url_for('log_in'))
 
 
+# Страница профиля
 @app.route('/profile')
 @login_required
 def profile():
     return render_template('profile.html', voting_songs_or_groups=voting_songs_or_groups)
 
 
+# Страница событий
 @app.route('/events')
 @login_required
 def events():

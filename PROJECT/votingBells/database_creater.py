@@ -25,7 +25,7 @@ class Songs(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), unique=True)
     band = db.Column(db.String(100), nullable=True)
-    bell = db.Column(db.LargeBinary, default=None)
+    # bell = db.Column(db.LargeBinary, default=None)
     offered_group = db.Column(db.Integer)
     approved = db.Column(db.Integer, default=0)
     likes = db.Column(db.Integer, default=0)

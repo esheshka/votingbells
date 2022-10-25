@@ -7,17 +7,35 @@
 {% block scripts %}
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
     <script src="{{ url_for ('static', filename = 'likes_songs.js') }}"></script>
+    <style>
+        .not_approved {
+            border: none; /* Убираем границу для браузера Firefox */
+            color: red; /* Цвет линии для остальных браузеров */
+            background-color: red; /* Цвет линии для браузера Firefox и Opera */
+            height: 5px; /* Толщина линии */
+        }
+        .approved {
+            border: none; /* Убираем границу для браузера Firefox */
+            color: black; /* Цвет линии для остальных браузеров */
+            background-color: black; /* Цвет линии для браузера Firefox и Opera */
+            height: 2px; /* Толщина линии */
+        }
+    </style>
 {% endblock %}
 
 
 {% block body %}
     <div>
-        <h1>Нынешняя тема - {{ selected_group }}</h1>
+        <h1>Тема - {{ selected_group }}</h1>
     </div>
     <div>
         {% for song in songs %}
-            <hr align="left" width="300px"><br>
-            <div>
+            {% if song.approved == 0 %}
+                <hr class="total_{{ song.id }} not_approved" align="left" width="300px"><br>
+            {% else %}
+                <hr class="total_{{ song.id }} approved" align="left" width="300px"><br>
+            {% endif %}
+            <div class="total_{{ song.id }}">
                 <div>
                     <h2><a href="/song/{{ song.id }}">{{ song.title }}</a></h2>
                 </div>
@@ -25,7 +43,7 @@
                     <h3 id="likes_{{ song.id }}">{{ song.recent_likes }}</h3>
                 </div>
                 <div>
-                    {% if current_user.is_authenticated %}
+                    {% if current_user.is_authenticated and voting_songs_or_groups == 'songs' %}
                         <button data-id="{{ song.id }}" data-choice="1">Нравится</button>
                         <button data-id="{{ song.id }}" data-choice="-1">Не нравится</button>
                     {% endif %}

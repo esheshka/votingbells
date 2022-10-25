@@ -6,6 +6,6 @@
     <div>
         <h2>Название - {{ song.title }}</h2>
         <h2>Группа - {{ song.band }}</h2>
-        <h2>Темы - </h2>
+        <h2>Темы {% for group in groups %} - {{ group.title }} {% endfor %}</h2>
     </div>
 {% endblock %}
