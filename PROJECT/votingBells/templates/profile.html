@@ -1,0 +1,8 @@
+{% extends 'menu_bar.html' %}
+
+{% block title %} Profile {% endblock %}
+
+{% block body %}
+    <p>Email: {{ current_user.get_email() }}
+    <p>ID: {{ current_user.get_id() }}
+{% endblock %}

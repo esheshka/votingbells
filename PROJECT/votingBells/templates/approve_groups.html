@@ -1,0 +1,29 @@
+{% extends 'menu_bar.html' %}
+
+{% block title %} Approve groups {% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
+    <script src="{{ url_for ('static', filename = 'approve_groups.js') }}"></script>
+{% endblock %}
+
+
+{% block body %}
+    <div>
+        {% for group in groups %}
+            <hr class="total_{{ group.id }}" align="left" width="300px"><br>
+            <div class="total_{{ group.id }}">
+                <div>
+                    <h2>{{ group.title }}</h2>
+                </div>
+                <div>
+                    <h3 id="likes_{{ group.id }}">{{ group.recent_likes }}</h3>
+                </div>
+                <div>
+                    <button data-id="{{ group.id }}" data-approve="Yes">Approve</button>
+                    <button data-id="{{ group.id }}" data-approve="No">Disapprove</button>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

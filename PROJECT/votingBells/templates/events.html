@@ -1,0 +1,27 @@
+{% extends 'menu_bar.html' %}
+
+{% block title %} Events {% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
+    <script src="{{ url_for ('static', filename = 'events.js') }}"></script>
+{% endblock %}
+
+
+{% block body %}
+    <div>
+        {% for event in events %}
+            <hr align="left" width="300px"><br>
+            <hr align="left" width="300px"><br>
+            <div>
+                <div>
+                    <h2>{{ event.title }}</h2>
+                </div>
+                <hr align="left" width="300px"><br>
+                <div>
+                    <h3>{{ event.text }}</h3>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

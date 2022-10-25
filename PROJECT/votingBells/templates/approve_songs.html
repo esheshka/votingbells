@@ -1,0 +1,29 @@
+{% extends 'menu_bar.html' %}
+
+{% block title %} Approve songs {% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
+    <script src="{{ url_for ('static', filename = 'approve_songs.js') }}"></script>
+{% endblock %}
+
+
+{% block body %}
+    <div>
+        {% for song in songs %}
+            <hr class="total_{{ song.id }}" align="left" width="300px"><br>
+            <div class="total_{{ song.id }}">
+                <div>
+                    <h2>{{ song.title }}</h2>
+                </div>
+                <div>
+                    <h3 id="likes_{{ song.id }}">{{ song.recent_likes }}</h3>
+                </div>
+                <div>
+                    <button data-id="{{ song.id }}" data-approve="Yes">Approve</button>
+                    <button data-id="{{ song.id }}" data-approve="No">Disapprove</button>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

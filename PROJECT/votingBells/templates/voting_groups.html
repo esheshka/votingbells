@@ -1,0 +1,33 @@
+{% extends 'menu_bar.html' %}
+
+{% block title %} Voting {% endblock %}
+
+{% block bells %} <h1 id="bells">Bells - {{ current_user.get_bells() }}</h1> {% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
+    <script src="{{ url_for ('static', filename = 'likes_groups.js') }}"></script>
+{% endblock %}
+
+
+{% block body %}
+    <div>
+        {% for group in groups %}
+            <hr align="left" width="300px"><br>
+            <div>
+                <div>
+                    <h2>{{ group.title }}</h2>
+                </div>
+                <div>
+                    <h3 id="likes_{{ group.id }}">{{ group.recent_likes }}</h3>
+                </div>
+                <div>
+                    {% if current_user.is_authenticated %}
+                        <button data-id="{{ group.id }}" data-choice="1">Нравится</button>
+                        <button data-id="{{ group.id }}" data-choice="-1">Не нравится</button>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
