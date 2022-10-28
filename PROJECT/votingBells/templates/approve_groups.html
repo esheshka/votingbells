@@ -13,9 +13,19 @@
         {% for group in groups %}
             <hr class="total_{{ group.id }}" align="left" width="300px"><br>
             <div class="total_{{ group.id }}">
-                <div>
-                    <h2>{{ group.title }}</h2>
-                </div>
+                <span>
+                    {% if group.is_new == 1  %}
+                        <input type=text list=autotitle>
+                    {% else %}
+                        <input type=text list=autotitle value="{{ group.title }}">
+                    {% endif %}
+                    <datalist id="autotitle">
+                        {% for title in titles %}
+                            <option>{{ title[0] }}</option>
+                        {% endfor %}
+                    </datalist>
+                    <h3>{{ group.title }}</h3>
+                </span>
                 <div>
                     <h3 id="likes_{{ group.id }}">{{ group.recent_likes }}</h3>
                 </div>

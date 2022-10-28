@@ -23,10 +23,11 @@ class Users(db.Model):
 
 class Songs(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), unique=True)
+    title = db.Column(db.String(100), nullable=True)
     band = db.Column(db.String(100), nullable=True)
-    # bell = db.Column(db.LargeBinary, default=None)
+    bell = db.Column(db.LargeBinary, default=None)
     offered_group = db.Column(db.Integer)
+    is_new = db.Column(db.Integer, default=1)
     approved = db.Column(db.Integer, default=0)
     likes = db.Column(db.Integer, default=0)
     recent_likes = db.Column(db.Integer, default=0)
@@ -36,6 +37,7 @@ class Groups(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), unique=True)
     avatar = db.Column(db.LargeBinary, default=None)
+    is_new = db.Column(db.Integer, default=1)
     approved = db.Column(db.Integer, default=0)
     likes = db.Column(db.Integer, default=0)
     recent_likes = db.Column(db.Integer, default=0)

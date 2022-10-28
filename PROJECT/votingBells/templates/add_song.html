@@ -4,22 +4,36 @@
 
 {% block body %}
     <form action="{{ url_for('add_song') }}" method="post">
-    {{ form.hidden_tag() }}
+        {{ form.hidden_tag() }}
 
-    {% for field in form if field.name not in ['csrf_token', 'submit'] -%}
-        <p> {{ field.label() }}
-            {% if field.errors %}
-                {{ field(class="invalid") }}
-                <span>
-                    {% for e in field.errors %}
-                        {{ e }}
-                    {% endfor %}
-                </span>
-            {% else %}
-                {{ field() }}
-            {% endif %}
-    {% endfor %}
+        {% for field in form if field.name not in ['csrf_token', 'submit'] -%}
+            <p> {{ field.label() }}
+                {% if field.errors %}
+                    {{ field(class="invalid") }}
+                    <span>
+                        {% for e in field.errors %}
+                            {{ e }}
+                        {% endfor %}
+                    </span>
+                {% else %}
+                    {% if field.name == 'title' %}
+                        {{ field(list='autotitle') }}
+                        <datalist id="autotitle">
+                            {% for title in titles %}
+                                <option>{{ title[0] }}</option>
+                            {% endfor %}
+                        </datalist>
+                    {% elif field.name == 'band' %}
+                        {{ field(list='autoband') }}
+                        <datalist id="autoband">
+                            {% for band in bands %}
+                                <option>{{ band[0] }}</option>
+                            {% endfor %}
+                        </datalist>
+                    {% endif %}
+                {% endif %}
+        {% endfor %}
 
-    <p> {{ form.submit() }}
+        <p> {{ form.submit() }}
     </form>
 {% endblock %}

@@ -1,16 +1,21 @@
+<!DOCTYPE HTML>
 <html>
-    <head>
-        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
-        <script src="{{ url_for ('static', filename = 'index.js') }}"></script>
-        <title>Vote</title>
-    </head>
-    <body>
-        <div>Yes Votes: <span id="yes"></span></div>
-        <div>No Votes: <span id="no"></span></div>
-        <div>Maybe Votes: <span id="maybe"><span></div>
-        <hr>
-        <button data-vote="yes">Yes</button>
-        <button data-vote="no">No</button>
-        <button data-vote="maybe">Maybe</button>
-  </body>
+ <head>
+  <meta charset="utf-8">
+  <title>Тег SELECT</title>
+ </head>
+ <body>
+
+  <form action="select1.php" method="post">
+   <input type=text list=mycoollist>
+    <datalist id=mycoollist>
+    <option>i want to kill you</option>
+    <option>i will kill you</option>
+    <option>you will die</option>
+    <option>i will be killed</option>
+    <option>i will be dead</option>
+    </datalist>
+  </form>
+
+ </body>
 </html>

@@ -62,7 +62,7 @@ def voting_songs():
         return redirect(url_for('voting'))
     songs = []
     for song in Songs.query.order_by(Songs.recent_likes.desc()).all():
-        if Groups_Songs.query.filter_by(song_id=song.id).filter_by(group_id=selected_group).count() > 0:
+        if Groups_Songs.query.filter_by(song_id=song.id).filter_by(group_id=selected_group).count() > 0 or song.approved == 0:
             songs.append(song)
     return render_template('voting_songs.html', selected_group=Groups.query.filter_by(id=selected_group).first().title,
                            voting_songs_or_groups=voting_songs_or_groups, songs=songs)
@@ -188,7 +188,7 @@ def add_song():
     if form.validate_on_submit():
         song = Songs.query.filter_by(title=form.title.data).filter_by(band=form.band.data)
         if song.count() > 0:
-            if Groups_Songs.query.filter_by(song_id=song.first().id).filter_by(group_id=selected_group).count() == 0:
+            if Groups_Songs.query.filter_by(song_id=song.first().id).filter_by(group_id=selected_group).count() > 0:
                 print('There is the same song')
             else:
                 song.first().offered_group = selected_group
@@ -202,7 +202,9 @@ def add_song():
             db.session.flush()
             db.session.commit()
             return redirect(url_for('voting'))
-    return render_template('add_song.html', voting_songs_or_groups=voting_songs_or_groups, form=form)
+    return render_template('add_song.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
+                           titles=db.session.query(Songs.title).all(),
+                           bands=db.session.query(Songs.band).all())
 
 
 # Отправляем страницу добавления темы
@@ -221,7 +223,8 @@ def add_group():
             db.session.flush()
             db.session.commit()
             return redirect(url_for('voting'))
-    return render_template('add_group.html', voting_songs_or_groups=voting_songs_or_groups, form=form)
+    return render_template('add_group.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
+                           titles=db.session.query(Groups.title).all())
 
 
 # Отправляем все список предложенных песен
@@ -230,7 +233,10 @@ def add_group():
 @login_required
 def approve_songs():
     if current_user.get_position() in ['chief', 'admin']:
-        return render_template('approve_songs.html', voting_songs_or_groups=voting_songs_or_groups, songs=Songs.query.filter_by(approved=0).order_by(Songs.likes).all())
+        return render_template('approve_songs.html', voting_songs_or_groups=voting_songs_or_groups,
+                               songs=Songs.query.filter_by(approved=0).order_by(Songs.likes).all(),
+                               titles=db.session.query(Songs.title).all(),
+                               bands=db.session.query(Songs.band).all())
     else:
         return redirect(url_for('voting'))
 
@@ -241,12 +247,15 @@ def approve_songs():
 @login_required
 def approve_groups():
     if current_user.get_position() in ['chief', 'admin']:
-        return render_template('approve_groups.html', voting_songs_or_groups=voting_songs_or_groups, groups=Groups.query.filter_by(approved=0).order_by(Groups.likes).all())
+        return render_template('approve_groups.html', voting_songs_or_groups=voting_songs_or_groups,
+                               groups=Groups.query.filter_by(approved=0).order_by(Groups.likes).all(),
+                               titles=db.session.query(Groups.title).all())
     else:
         return redirect(url_for('voting'))
 
 
 # JS функция подтверждения добавления песни
+# data <=> [id, choice]
 @socketio.on('approve song')
 def approve_song(data):
     song = Songs.query.filter_by(id=data[0]).first()
@@ -254,6 +263,7 @@ def approve_song(data):
     song.approved = 1
     if data[1] == 'Yes':
         approved = 1
+        song.is_new = 0
         gs = Groups_Songs(song_id=data[0], group_id=selected_group)
         db.session.add(gs)
     elif Groups_Songs.query.filter_by(song_id=data[0]).count() == 0:
@@ -267,11 +277,13 @@ def approve_song(data):
 
 
 # JS функция подтверждения добавления темы
+# data <=> [id, choice]
 @socketio.on('approve group')
 def approve_group(data):
     group = Groups.query.filter_by(id=data[0]).first()
     approved = 1
     group.approved = 1
+    group.is_new = 0
     if data[1] == 'No':
         approved = 0
         return_bells_by_group(data[0])
@@ -290,6 +302,7 @@ def get_bells():
 
 # Страница песни по id
 @app.route('/song/<id>')
+@login_required
 def song(id):
     groups = []
     for group in Groups_Songs.query.filter_by(song_id=id).all():
@@ -299,6 +312,7 @@ def song(id):
 
 # Страница темы по id
 @app.route('/group/<id>')
+@login_required
 def group(id):
     songs = []
     for song in Groups_Songs.query.filter_by(group_id=id).all():
@@ -346,7 +360,7 @@ def log_in():
         return redirect(url_for('profile'))
     form = Log_in_form()
     if form.validate_on_submit():
-        if check_password_hash(Users.query.filter_by(email=form.email.data).first().psw, form.psw.data):
+        if Users.query.filter_by(email=form.email.data).count() > 0 and check_password_hash(Users.query.filter_by(email=form.email.data).first().psw, form.psw.data):
             user_login = User_login().create(Users.query.filter_by(email=form.email.data).first())
             login_user(user_login, remember=form.remember.data)
             return redirect(url_for('profile'))
