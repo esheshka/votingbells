@@ -66,6 +66,8 @@ class Groups_Songs(db.Model):
 class Events(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(50))
+    tag = db.Column(db.String(500))
+    photo = db.Column(db.LargeBinary, default=None)
     text = db.Column(db.String(500))
     access_level = db.Column(db.String(50))
 

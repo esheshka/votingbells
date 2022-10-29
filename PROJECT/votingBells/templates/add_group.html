@@ -15,13 +15,17 @@
                         {{ e }}
                     {% endfor %}
                 </span>
-            {% else %}
-                {{ field(list='auto') }}
-                <datalist id="auto">
-                    {% for title in titles %}
-                        <option>{{ title[0] }}</option>
-                    {% endfor %}
-                </datalist>
+            {% elise  %}
+                {% if field.name == 'title' %}
+                    {{ field(list='autotitle') }}
+                    <datalist id="autotitle">
+                        {% for title in titles %}
+                            <option>{{ title[0] }}</option>
+                        {% endfor %}
+                    </datalist>
+                {% else %}
+                    {% field() %}
+                {% endif %}
             {% endif %}
     {% endfor %}
 

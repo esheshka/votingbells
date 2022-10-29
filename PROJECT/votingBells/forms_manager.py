@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, BooleanField, PasswordField
+from wtforms import StringField, SubmitField, BooleanField, PasswordField, TextAreaField, FileField, SelectField
 from wtforms.validators import DataRequired, Email, Length, EqualTo
 
 
@@ -22,4 +22,12 @@ class Add_song(FlaskForm):
 
 class Add_group(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
+    submit = SubmitField('Add group')
+
+class Add_event(FlaskForm):
+    title = StringField('Title', validators=[DataRequired()])
+    tag = SelectField('Tag', choices=[('new_songs', 'New playlist'), ('new_group', 'New group')], validators=[DataRequired()])
+    text = TextAreaField('Text', validators=[DataRequired()])
+    photo = FileField('Photo')
+    access_level = SelectField('Access')
     submit = SubmitField('Add group')

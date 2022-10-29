@@ -4,7 +4,7 @@ from database_creater import Users, Songs, Groups, Users_choices_songs, Users_ch
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 # Скрипт WTForms определяющий forms, упрощающий с ними работу
-from forms_manager import Log_in_form, Sign_up_form, Add_song, Add_group
+from forms_manager import Log_in_form, Sign_up_form, Add_song, Add_group, Add_event
 # Скрипт, для получения данных о пользователе
 from login_user import User_login
 from flask_socketio import SocketIO, emit
@@ -21,16 +21,28 @@ voting_songs_or_groups = 'groups'
 
 # список ролей и уровень их доступа
 access_accordance = (
-    {'name': 'user', 'level': 0},
-    {'name': 'designer', 'level': 1},
-    {'name': 'placer', 'level': 1},
-    {'name': 'cutter', 'level': 1},
-    {'name': 'text_writer', 'level': 1},
-    {'name': 'supporter', 'level': 1},
-    {'name': 'coordinator_design', 'level': 1},
-    {'name': 'coordinator_tech', 'level': 1},
-    {'name': 'admin', 'level': 2},
-    {'name': 'chief', 'level': 3})
+    {'name': 'user', 'group': 'all'},
+    {'name': 'designer', 'group': 'design'},
+    {'name': 'placer', 'group': 'tech'},
+    {'name': 'cutter', 'group': 'tech'},
+    {'name': 'text_writer', 'group': 'design'},
+    {'name': 'supporter', 'group': 'tech'},
+    {'name': 'coordinator_design', 'group': 'design'},
+    {'name': 'coordinator_tech', 'group': 'tech'},
+    {'name': 'admin', 'group': 'admin'},
+    {'name': 'chief', 'group': 'admin'})
+
+position_groups = {
+    'user': 'all',
+    'designer': 'design',
+    'placer': 'tech',
+    'cutter': 'tech',
+    'text_writer': 'design',
+    'supporter': 'tech',
+    'coordinator_design': 'design',
+    'coordinator_tech': 'tech',
+    'admin': 'admin',
+    'chief': 'admin'}
 
 
 # id выбранной на прошлом голосовании темы
@@ -389,24 +401,53 @@ def profile():
 def events():
     access = []
     level = 0
-    for position in access_accordance:
-        if position.get('name') == current_user.get_position():
-            level = position.get('level')
-            access.append(position.get('name'))
-            break
-
-    for position in access_accordance:
-        if position.get('level') < level:
-            access.append(position.get('name'))
-        else:
-            break
-    if len(access)==1:
-        taccess = str(tuple(access))[:-2] + ')'
+    # for position in access_accordance:
+    #     if position.get('name') == current_user.get_position():
+    #         level = position.get('level')
+    #         access.append(position.get('name'))
+    #         break
+    #
+    # for position in access_accordance:
+    #     if position.get('level') < level:
+    #         access.append(position.get('name'))
+    #     else:
+    #         break
+    #
+    # if len(access)==1:
+    #     taccess = str(tuple(access))[:-2] + ')'
+    # else:
+    #     taccess = str(tuple(access))
+    if current_user.get_position() not in ['chief', 'admin']:
+        events = Events.query.filter((Events.access_level == 'all') | (Events.access_level == position_groups.get(current_user.get_position()))).all()
     else:
-        taccess = str(tuple(access))
-    print(taccess)
-    events = db.session.execute(f'SELECT * FROM events WHERE access_level IN {taccess};')
+        events = Events.query.all()
+    # events = db.session.execute(f'SELECT * FROM events WHERE access_level IN {taccess};')
     return render_template('events.html', voting_songs_or_groups=voting_songs_or_groups, events=events)
+
+
+@app.route('/add_event', methods=['GET', 'POST'])
+@login_required
+def add_event():
+    if current_user.get_position() == 'user':
+        return redirect(url_for('events'))
+    form = Add_event()
+    if current_user.get_position() in ['chief', 'admin']:
+        form.access_level.choices = [('local', 'Админы'), ('all', 'Все'), ('design', 'Дизайнеры'), ('tech', 'Техники')]
+    else:
+        form.access_level.choices = [('local', 'Отдел'), ('all', 'Все')]
+
+    if form.validate_on_submit():
+        access_level = form.access_level.data
+        if form.access_level.data == 'local':
+            access_level = position_groups.get(current_user.get_position())
+        new_event = Events(title=form.title.data, tag=form.tag.data, text=form.text.data, access_level=access_level)
+        if form.photo.data != '':
+            new_event.photo = form.photo.data
+        db.session.add(new_event)
+        db.session.flush()
+        db.session.commit()
+        return redirect(url_for('events'))
+    return render_template('add_event.html', voting_songs_or_groups=voting_songs_or_groups, form=form)
 
 
 @app.route('/test')

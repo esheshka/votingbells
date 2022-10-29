@@ -30,6 +30,8 @@
                                 <option>{{ band[0] }}</option>
                             {% endfor %}
                         </datalist>
+                    {% else %}
+                        {% field() %}
                     {% endif %}
                 {% endif %}
         {% endfor %}
