@@ -1,4 +1,4 @@
-from flask import render_template, url_for, redirect
+from flask import render_template, url_for, redirect, request, make_response
 # Скрипт, определяющий базу данных, импортируются таблицы
 from database_creater import Users, Songs, Groups, Users_choices_songs, Users_choices_groups, Groups_Songs, Events, create_db, app, db
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
@@ -8,6 +8,8 @@ from forms_manager import Log_in_form, Sign_up_form, Add_song, Add_group, Add_ev
 # Скрипт, для получения данных о пользователе
 from login_user import User_login
 from flask_socketio import SocketIO, emit
+from base64 import b64encode
+from sqlite3 import Binary
 
 login_manager = LoginManager(app)
 login_manager.login_view = '/log_in'
@@ -76,8 +78,15 @@ def voting_songs():
     for song in Songs.query.order_by(Songs.recent_likes.desc()).all():
         if Groups_Songs.query.filter_by(song_id=song.id).filter_by(group_id=selected_group).count() > 0 or song.approved == 0:
             songs.append(song)
+    user_likes = Users_choices_songs.query.filter_by(user_id=current_user.get_id())
+    id_songs = db.session.query(Users_choices_songs.song_id).filter_by(user_id=current_user.get_id()).all()
+    ids = []
+    for m in id_songs:
+        ids.append(str(m)[1:-2])
+    user_selected_songs = Songs.query.filter(Songs.id.in_(ids)).order_by(Songs.recent_likes.desc()).all()
     return render_template('voting_songs.html', selected_group=Groups.query.filter_by(id=selected_group).first().title,
-                           voting_songs_or_groups=voting_songs_or_groups, songs=songs)
+                           voting_songs_or_groups=voting_songs_or_groups, songs=songs,
+                           user_likes=user_likes, user_selected_songs=user_selected_songs)
 
 
 # Отправляем страницу голосования за тему
@@ -85,7 +94,14 @@ def voting_songs():
 @login_required
 def voting_groups():
     groups = Groups.query.order_by(Groups.recent_likes.desc()).all()
-    return render_template('voting_groups.html',  voting_songs_or_groups=voting_songs_or_groups, groups=groups)
+    user_likes = Users_choices_groups.query.filter_by(user_id=current_user.get_id())
+    id_groups = db.session.query(Users_choices_groups.group_id).filter_by(user_id=current_user.get_id()).all()
+    ids = []
+    for m in id_groups:
+        ids.append(str(m)[1:-2])
+    user_selected_groups = Groups.query.filter(Groups.id.in_(ids)).order_by(Groups.recent_likes.desc()).all()
+    return render_template('voting_groups.html',  voting_songs_or_groups=voting_songs_or_groups, groups=groups,
+                           user_likes=user_likes, user_selected_groups=user_selected_groups)
 
 
 # Завершаем голосование и переходим к следующему
@@ -148,6 +164,12 @@ def likes_songs(data):
         db.session.flush()
         db.session.commit()
     count = Songs.query.filter_by(id=data[0]).first().recent_likes
+    user_like = Users_choices_songs.query.filter_by(user_id=current_user.get_id()).filter_by(song_id=data[0]).first()
+    if user_like == None:
+        user_like = 0
+    else:
+        user_like = user_like.choice
+    emit('show my likes song', [data[0], user_like])
     emit("vote totals songs", [count, data[0]], broadcast=True)
     emit('show bells', data=1, broadcast=True)
 
@@ -184,9 +206,14 @@ def likes_groups(data):
         db.session.flush()
         db.session.commit()
     count = Groups.query.filter_by(id=data[0]).first().recent_likes
+    user_like = Users_choices_groups.query.filter_by(user_id=current_user.get_id()).filter_by(group_id=data[0]).first()
+    if user_like == None:
+        user_like = 0
+    else:
+        user_like = user_like.choice
+    emit('show my likes group', [data[0], user_like])
     emit("vote totals groups", [count, data[0]], broadcast=True)
     emit('show bells', data=1, broadcast=True)
-
 
 # Отправляем страницу добавления песни
 # Обрабатываем попытку добавить песню
@@ -215,7 +242,7 @@ def add_song():
             db.session.commit()
             return redirect(url_for('voting'))
     return render_template('add_song.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
-                           titles=db.session.query(Songs.title).all(),
+                           titles=db.session.query(Songs.title).filter(Songs.approved == 1).all(),
                            bands=db.session.query(Songs.band).all())
 
 
@@ -236,7 +263,7 @@ def add_group():
             db.session.commit()
             return redirect(url_for('voting'))
     return render_template('add_group.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
-                           titles=db.session.query(Groups.title).all())
+                           titles=db.session.query(Groups.title).filter(Groups.approved == 1).all())
 
 
 # Отправляем все список предложенных песен
@@ -247,7 +274,7 @@ def approve_songs():
     if current_user.get_position() in ['chief', 'admin']:
         return render_template('approve_songs.html', voting_songs_or_groups=voting_songs_or_groups,
                                songs=Songs.query.filter_by(approved=0).order_by(Songs.likes).all(),
-                               titles=db.session.query(Songs.title).all(),
+                               titles=db.session.query(Songs.title).filter(Songs.approved == 1).all(),
                                bands=db.session.query(Songs.band).all())
     else:
         return redirect(url_for('voting'))
@@ -261,7 +288,7 @@ def approve_groups():
     if current_user.get_position() in ['chief', 'admin']:
         return render_template('approve_groups.html', voting_songs_or_groups=voting_songs_or_groups,
                                groups=Groups.query.filter_by(approved=0).order_by(Groups.likes).all(),
-                               titles=db.session.query(Groups.title).all())
+                               titles=db.session.query(Groups.title).filter(Groups.approved == 1).all())
     else:
         return redirect(url_for('voting'))
 
@@ -401,27 +428,10 @@ def profile():
 def events():
     access = []
     level = 0
-    # for position in access_accordance:
-    #     if position.get('name') == current_user.get_position():
-    #         level = position.get('level')
-    #         access.append(position.get('name'))
-    #         break
-    #
-    # for position in access_accordance:
-    #     if position.get('level') < level:
-    #         access.append(position.get('name'))
-    #     else:
-    #         break
-    #
-    # if len(access)==1:
-    #     taccess = str(tuple(access))[:-2] + ')'
-    # else:
-    #     taccess = str(tuple(access))
     if current_user.get_position() not in ['chief', 'admin']:
         events = Events.query.filter((Events.access_level == 'all') | (Events.access_level == position_groups.get(current_user.get_position()))).all()
     else:
         events = Events.query.all()
-    # events = db.session.execute(f'SELECT * FROM events WHERE access_level IN {taccess};')
     return render_template('events.html', voting_songs_or_groups=voting_songs_or_groups, events=events)
 
 
@@ -441,17 +451,33 @@ def add_event():
         if form.access_level.data == 'local':
             access_level = position_groups.get(current_user.get_position())
         new_event = Events(title=form.title.data, tag=form.tag.data, text=form.text.data, access_level=access_level)
-        if form.photo.data != '':
-            new_event.photo = form.photo.data
+        if form.photo.data:
+            new_event.photo = form.photo.data.read()
         db.session.add(new_event)
-        db.session.flush()
         db.session.commit()
         return redirect(url_for('events'))
     return render_template('add_event.html', voting_songs_or_groups=voting_songs_or_groups, form=form)
 
 
-@app.route('/test')
+@app.route('/event_img/<event_id>')
+def event_img(event_id):
+    img = Events.query.filter_by(id=event_id).first().photo
+    print(event_id, str(img)[:30])
+    h = make_response(img)
+    return h
+
+
+@app.route('/test', methods=['GET', 'POST'])
 def test():
+    if request.method == 'POST':
+        file = request.files['file']
+        print(file)
+        print(type(file))
+        event = Events.query.first()
+        print(event.id)
+        event.photo = file.read()
+        db.session.commit()
+        return f'Up {file.filename}'
     return render_template('test.html')
 
 

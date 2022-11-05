@@ -6,51 +6,60 @@
         <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <link rel="stylesheet" href="{{ url_for ('static', filename = 'main.css') }}">
         {% block scripts %}{% endblock %}
         <title>{% block title %}{% endblock %}</title>
     </head>
 
     <body>
-        <div>
-            <h2>
+        <a class="menu_close open" href="#menu_back">Y</a>
+        {% block bells %}{% endblock %}
+        <div class="body_local">
+            {% block body %}{% endblock %}
+            <br>
+        </div>
+
+        <div id="menu_back">
+            <div class="menu_bar">
+                <a class="menu_close" href="">X</a>
+
                 {% if current_user.is_anonymous and not current_user.is_authenticated %}
-                    <a href="/sign_up">Зарегистрироваться</a>
+                    <a class="menu_member" href="/sign_up">Зарегистрироваться</a>
                 {% endif %}
                 {% if current_user.is_anonymous and not current_user.is_authenticated %}
-                    <a href="/log_in">Войти</a>
+                    <a class="menu_member" href="/log_in">Войти</a>
                 {% endif %}
                 {% if current_user.is_authenticated %}
-                    <a href="/log_out">Выйти</a>
+                    <a class="menu_member" href="/log_out">Выйти</a>
                 {% endif %}
                 {% if current_user.is_authenticated %}
-                    <a href="/voting">Голосование</a>
+                    <a class="menu_member" href="/voting">Голосование</a>
                 {% endif %}
                 {% if current_user.is_authenticated %}
-                    <a href="/profile">Профиль</a>
+                    <a class="menu_member" href="/profile">Профиль</a>
                 {% endif %}
                 {% if current_user.is_authenticated and voting_songs_or_groups == 'groups' %}
-                    <a href="/add_group">Предложить тему</a>
+                    <a class="menu_member" href="/add_group">Предложить тему</a>
                 {% endif %}
                 {% if current_user.is_authenticated and voting_songs_or_groups == 'groups' and current_user.get_position() in ['admin', 'chief'] %}
-                    <a href="/approve_groups">Проверить темы</a>
+                    <a class="menu_member" href="/approve_groups">Проверить темы</a>
                 {% endif %}
                 {% if current_user.is_authenticated and voting_songs_or_groups == 'songs' %}
-                    <a href="/add_song">Предложить песню</a>
+                    <a class="menu_member" href="/add_song">Предложить песню</a>
                 {% endif %}
                 {% if current_user.is_authenticated and voting_songs_or_groups == 'songs' and current_user.get_position() in ['admin', 'chief'] %}
-                    <a href="/approve_songs">Проверить песни</a>
+                    <a class="menu_member" href="/approve_songs">Проверить песни</a>
                 {% endif %}
                 {% if current_user.is_authenticated %}
-                    <a href="/events">Events</a>
+                    <a class="menu_member" href="/events">События</a>
                 {% endif %}
                 {% if current_user.is_authenticated and current_user.get_position() in ['admin', 'chief'] %}
-                    <a href="/change_voting">Завершить голосование</a>
+                    <a class="menu_member" href="/add_event">Создать событие</a>
                 {% endif %}
-            </h2>
-            {% block bells %}{% endblock %}
-        </div>
-        <div>
-            {% block body %}{% endblock %}
+                {% if current_user.is_authenticated and current_user.get_position() in ['admin', 'chief'] %}
+                    <a class="menu_member" href="/change_voting">Завершить голосование</a>
+                {% endif %}
+            </div>
         </div>
     </body>
 </html>

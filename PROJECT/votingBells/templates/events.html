@@ -4,24 +4,26 @@
 
 {% block scripts %}
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
-    <script src="{{ url_for ('static', filename = 'events.js') }}"></script>
 {% endblock %}
 
 
 {% block body %}
-    <div>
-        {% for event in events %}
-            <hr align="left" width="300px"><br>
-            <hr align="left" width="300px"><br>
-            <div>
-                <div>
-                    <h2>{{ event.title }}</h2>
+    <div class="event_list">
+        <div>
+            {% for event in events %}
+                <div class="event_member">
+                    <div>
+                        <span class="title local">{{ event.title }}</span>
+                    </div>
+                    {% if not (event.photo == None) %}
+                        <img class="event_img" src="/event_img/{{ event.id }}">
+                    {% endif %}
+                    <div>
+                        <span class="event_text">{{ event.text }}</span>
+                    </div>
                 </div>
-                <hr align="left" width="300px"><br>
-                <div>
-                    <h3>{{ event.text }}</h3>
-                </div>
-            </div>
-        {% endfor %}
+                <br>
+            {% endfor %}
+        </div>
     </div>
 {% endblock %}

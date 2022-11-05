@@ -2,54 +2,101 @@
 
 {% block title %} Voting {% endblock %}
 
-{% block bells %} <h1 id="bells">Bells - {{ current_user.get_bells() }}</h1> {% endblock %}
+{% block bells %} <div class="user_bells"><span id="bells">Bells - {{ current_user.get_bells() }}</span></div> {% endblock %}
 
 {% block scripts %}
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
     <script src="{{ url_for ('static', filename = 'likes_songs.js') }}"></script>
-    <style>
-        .not_approved {
-            border: none; /* Убираем границу для браузера Firefox */
-            color: red; /* Цвет линии для остальных браузеров */
-            background-color: red; /* Цвет линии для браузера Firefox и Opera */
-            height: 5px; /* Толщина линии */
-        }
-        .approved {
-            border: none; /* Убираем границу для браузера Firefox */
-            color: black; /* Цвет линии для остальных браузеров */
-            background-color: black; /* Цвет линии для браузера Firefox и Opera */
-            height: 2px; /* Толщина линии */
-        }
-    </style>
 {% endblock %}
 
 
 {% block body %}
-    <div>
-        <h1>Тема - {{ selected_group }}</h1>
+    <div class="title main">
+        <span>ВЫБОР ПЕСЕН</span>
     </div>
-    <div>
-        {% for song in songs %}
-            {% if song.approved == 0 %}
-                <hr class="total_{{ song.id }} not_approved" align="left" width="300px"><br>
-            {% else %}
-                <hr class="total_{{ song.id }} approved" align="left" width="300px"><br>
-            {% endif %}
-            <div class="total_{{ song.id }}">
-                <div>
-                    <h2><a href="/song/{{ song.id }}">{{ song.title }}</a></h2>
-                    <h2>{{ song.band }}</h2>
-                </div>
-                <div>
-                    <h3 id="likes_{{ song.id }}">{{ song.recent_likes }}</h3>
-                </div>
-                <div>
-                    {% if current_user.is_authenticated and voting_songs_or_groups == 'songs' %}
-                        <button data-id="{{ song.id }}" data-choice="1">Нравится</button>
-                        <button data-id="{{ song.id }}" data-choice="-1">Не нравится</button>
+    <div class="title main">
+        <span>ТЕМА - {{ selected_group }}</span>
+    </div>
+
+    <hr class="new_title">
+
+    {% if user_selected_songs %}
+        <div class="title local">
+            <span>ВЫ ГОЛОСОВАЛИ</span>
+        </div>
+
+        <div class="total">
+            {% for song in user_selected_songs %}
+                <div class="total_{{ song.id }} approved {% if song.approved == 0 %}no{% endif %}">
+                    <span class="name">{{ song.title }}</span><br>
+                    <span class="name band">{{ song.band }}</span><br>
+                    <span class="likes likes_{{ song.id }}">{{ song.recent_likes }} | </span>
+                    {% if user_likes.filter_by(song_id=song.id).count() > 0 %}
+                        <span class="likes user_likes_{{song.id }}">{{ user_likes.filter_by(song_id=song.id).first().choice }}</span>
+                    {% else %}
+                        <span class="likes user_likes_{{ song.id }}">0</span>
                     {% endif %}
+                    {% if current_user.is_authenticated and voting_songs_or_groups == 'songs' %}
+                        <button class="like" data-id="{{ song.id }}" data-choice="1"></button>
+                        <button class="like dis" data-id="{{ song.id }}" data-choice="-1"></button>
+                    {% endif %}
+                    <a href="/song/{{ song.id }}"></a>
                 </div>
+            {% endfor %}
+        </div>
+
+        <hr class="new_title">
+    {% endif %}
+
+    <div class="title local">
+        <span>ТОП 20</span>
+    </div>
+
+    <div class="total">
+        {% for song in songs[:20] %}
+            <div class="total_{{ song.id }} approved {% if song.approved == 0 %}no{% endif %}">
+                <span class="name">{{ song.title }}</span><br>
+                <span class="name band">{{ song.band }}</span><br>
+                <span class="likes likes_{{ song.id }}">{{ song.recent_likes }} | </span>
+                {% if user_likes.filter_by(song_id=song.id).count() > 0 %}
+                    <span class="likes user_likes_{{song.id }}">{{ user_likes.filter_by(song_id=song.id).first().choice }}</span>
+                {% else %}
+                    <span class="likes user_likes_{{ song.id }}">0</span>
+                {% endif %}
+                {% if current_user.is_authenticated and voting_songs_or_groups == 'songs' %}
+                    <button class="like" data-id="{{ song.id }}" data-choice="1"></button>
+                    <button class="like dis" data-id="{{ song.id }}" data-choice="-1"></button>
+                {% endif %}
+                <a href="/song/{{ song.id }}"></a>
             </div>
         {% endfor %}
     </div>
+
+    {% if songs[21:] %}
+        <hr class="new_title">
+
+        <div class="title local">
+            <span>ОСТАЛЬНЫЕ</span>
+        </div>
+
+        <div class="total">
+            {% for song in songs[21:] %}
+                <div class="total_{{ song.id }} approved {% if song.approved == 0 %}no{% endif %}">
+                    <span class="name">{{ song.title }}</span><br>
+                    <span class="name band">{{ song.band }}</span><br>
+                    <span class="likes likes_{{ song.id }}">{{ song.recent_likes }} | </span>
+                    {% if user_likes.filter_by(song_id=song.id).count() > 0 %}
+                        <span class="likes user_likes_{{song.id }}">{{ user_likes.filter_by(song_id=song.id).first().choice }}</span>
+                    {% else %}
+                        <span class="likes user_likes_{{ song.id }}">0</span>
+                    {% endif %}
+                    {% if current_user.is_authenticated and voting_songs_or_groups == 'songs' %}
+                        <button class="like" data-id="{{ song.id }}" data-choice="1"></button>
+                        <button class="like dis" data-id="{{ song.id }}" data-choice="-1"></button>
+                    {% endif %}
+                    <a href="/song/{{ song.id }}"></a>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
 {% endblock %}

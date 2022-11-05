@@ -12,9 +12,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    socket.on('vote totals songs', data => {
-        document.querySelector('#likes_' + data[1]).innerHTML = data[0];
+    socket.on('show my likes song', data => {
+        const user_likes = document.querySelectorAll('.user_likes_' + data[0]);
+        for (var i=0; i < user_likes.length; i++) {
+            user_likes[i].innerHTML = data[1];
+        }
+    });
 
+    socket.on('vote totals songs', data => {
+        likes = document.querySelectorAll('.likes_' + data[1]);
+        for (var i=0; i<likes.length; i++) {
+            likes[i].innerHTML = data[0] + ' | ';
+        }
     });
 
     socket.on('show bells', data => {
@@ -25,9 +34,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('#bells').innerHTML = 'Bells - ' + count;
     });
 
-    socket.on('is approve song', data => {
+    socket.on('is approve group', data => {
         if (data[1] == 0) {
-            document.querySelectorAll('.total_' + data[0]).forEach(e => e.parentNode.removeChild(e));
+            total = document.querySelectorAll('.total_' + data[0]);
+            for (var i=0; i<total.length; i++) {
+                total[i].forEach(e => e.parentNode.removeChild(e));
+            }
         }
     });
 });

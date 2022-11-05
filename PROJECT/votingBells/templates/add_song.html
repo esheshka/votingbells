@@ -3,11 +3,12 @@
 {% block title %} Add song {% endblock %}
 
 {% block body %}
-    <form action="{{ url_for('add_song') }}" method="post">
+    <form class="form" action="{{ url_for('add_song') }}" method="post">
         {{ form.hidden_tag() }}
 
         {% for field in form if field.name not in ['csrf_token', 'submit'] -%}
-            <p> {{ field.label() }}
+            <div>
+                {{ field.label(class='label') }}
                 {% if field.errors %}
                     {{ field(class="invalid") }}
                     <span>
@@ -17,6 +18,7 @@
                     </span>
                 {% else %}
                     {% if field.name == 'title' %}
+                        <br class="br">
                         {{ field(list='autotitle') }}
                         <datalist id="autotitle">
                             {% for title in titles %}
@@ -24,6 +26,7 @@
                             {% endfor %}
                         </datalist>
                     {% elif field.name == 'band' %}
+                        <br class="br">
                         {{ field(list='autoband') }}
                         <datalist id="autoband">
                             {% for band in bands %}
@@ -31,11 +34,14 @@
                             {% endfor %}
                         </datalist>
                     {% else %}
-                        {% field() %}
+                        <br class="br">
+                        {{ field() }}
                     {% endif %}
                 {% endif %}
+            </div>
         {% endfor %}
-
-        <p> {{ form.submit() }}
+        <div>
+            {{ form.submit() }}
+        </div>
     </form>
 {% endblock %}

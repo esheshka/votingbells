@@ -2,50 +2,93 @@
 
 {% block title %} Voting {% endblock %}
 
-{% block bells %} <h1 id="bells">Bells - {{ current_user.get_bells() }}</h1> {% endblock %}
+{% block bells %} <div class="user_bells"><span id="bells">Bells - {{ current_user.get_bells() }}</span></div> {% endblock %}
 
 {% block scripts %}
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
     <script src="{{ url_for ('static', filename = 'likes_groups.js') }}"></script>
-    <style>
-        .not_approved {
-            border: none; /* Убираем границу для браузера Firefox */
-            color: red; /* Цвет линии для остальных браузеров */
-            background-color: red; /* Цвет линии для браузера Firefox и Opera */
-            height: 5px; /* Толщина линии */
-        }
-        .approved {
-            border: none; /* Убираем границу для браузера Firefox */
-            color: black; /* Цвет линии для остальных браузеров */
-            background-color: black; /* Цвет линии для браузера Firefox и Opera */
-            height: 2px; /* Толщина линии */
-        }
-    </style>
 {% endblock %}
 
 
 {% block body %}
-    <div>
-        {% for group in groups %}
-            {% if group.approved == 0 %}
-                <hr class="total_{{ group.id }} not_approved" align="left" width="300px""><br>
-            {% else %}
-                <hr class="total_{{ group.id }} approved" align="left" width="300px"><br>
-            {% endif %}
-            <div class="total_{{ group.id }}">
-                <div>
-                    <h2><a href="/group/{{ group.id }}">{{ group.title }}</a></h2>
-                </div>
-                <div>
-                    <h3 id="likes_{{ group.id }}">{{ group.recent_likes }}</h3>
-                </div>
-                <div>
-                    {% if current_user.is_authenticated and voting_songs_or_groups == 'groups' %}
-                        <button data-id="{{ group.id }}" data-choice="1">Нравится</button>
-                        <button data-id="{{ group.id }}" data-choice="-1">Не нравится</button>
-                    {% endif %}
-                </div>
-            </div>
-        {% endfor %}
+    <div class="title main">
+        <span>ВЫБОР ТЕМЫ</span>
     </div>
+
+    <hr class="new_title">
+
+    {% if user_selected_groups %}
+        <div class="title local">
+            <span>ВЫ ГОЛОСОВАЛИ</span>
+        </div>
+
+        <div class="total">
+            {% for group in user_selected_groups %}
+                <div class="total_{{ group.id }} approved {% if group.approved == 0 %}no{% endif %}">
+                    <span class="name">{{ group.title }}</span><br>
+                    <span class="likes likes_{{ group.id }}">{{ group.recent_likes }} | </span>
+                    {% if user_likes.filter_by(group_id=group.id).count() > 0 %}
+                        <span class="likes user_likes_{{group.id }}">{{ user_likes.filter_by(group_id=group.id).first().choice }}</span>
+                    {% else %}
+                        <span class="likes user_likes_{{ group.id }}">0</span>
+                    {% endif %}
+                    {% if current_user.is_authenticated and voting_songs_or_groups == 'groups' %}
+                        <button class="like" data-id="{{ group.id }}" data-choice="1"></button>
+                        <button class="like dis" data-id="{{ group.id }}" data-choice="-1"></button>
+                    {% endif %}
+                    <a href="/group/{{ group.id }}"></a>
+                </div>
+            {% endfor %}
+        </div>
+
+        <hr class="new_title">
+    {% endif %}
+
+    <div class="title local">
+        <span>ТОП 1</span>
+    </div>
+
+    <div class="total top_group">
+        <div class="total_{{ groups[0].id }} approved {% if groups[0].approved == 0 %}no{% endif %}">
+            <span class="name">{{ groups[0].title }}</span><br>
+            <span class="likes likes_{{ groups[0].id }}">{{ groups[0].recent_likes }} | </span>
+            {% if user_likes.filter_by(group_id=groups[0].id).count() > 0 %}
+                <span class="likes user_likes_{{groups[0].id }}">{{ user_likes.filter_by(group_id=groups[0].id).first().choice }}</span>
+            {% else %}
+                <span class="likes user_likes_{{ groups[0].id }}">0</span>
+            {% endif %}
+            {% if current_user.is_authenticated and voting_songs_or_groups == 'groups' %}
+                <button class="like" data-id="{{ groups[0].id }}" data-choice="1"></button>
+                <button class="like dis" data-id="{{ groups[0].id }}" data-choice="-1"></button>
+            {% endif %}
+            <a href="/group/{{ groups[0].id }}"></a>
+        </div>
+    </div>
+
+    {% if groups[1:] %}
+        <hr class="new_title">
+
+        <div class="title local">
+            <span>Остальные</span>
+        </div>
+
+        <div class="total">
+            {% for group in groups[1:] %}
+                <div class="total_{{ group.id }} approved {% if group.approved == 0 %}no{% endif %}">
+                    <span class="name">{{ group.title }}</span><br>
+                    <span class="likes likes_{{ group.id }}">{{ group.recent_likes }} | </span>
+                    {% if user_likes.filter_by(group_id=group.id).count() > 0 %}
+                        <span class="likes user_likes_{{group.id }}">{{ user_likes.filter_by(group_id=group.id).first().choice }}</span>
+                    {% else %}
+                        <span class="likes user_likes_{{ group.id }}">0</span>
+                    {% endif %}
+                    {% if current_user.is_authenticated and voting_songs_or_groups == 'groups' %}
+                        <button class="like" data-id="{{ group.id }}" data-choice="1"></button>
+                        <button class="like dis" data-id="{{ group.id }}" data-choice="-1"></button>
+                    {% endif %}
+                    <a href="/group/{{ group.id }}"></a>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
 {% endblock %}

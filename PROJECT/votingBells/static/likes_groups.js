@@ -12,8 +12,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    socket.on('show my likes group', data => {
+        const user_likes = document.querySelectorAll('.user_likes_' + data[0]);
+        for (var i=0; i < user_likes.length; i++) {
+            user_likes[i].innerHTML = data[1];
+        }
+    });
+
     socket.on('vote totals groups', data => {
-        document.querySelector('#likes_' + data[1]).innerHTML = data[0];
+        likes = document.querySelectorAll('.likes_' + data[1]);
+        for (var i=0; i<likes.length; i++) {
+            likes[i].innerHTML = data[0] + ' | ';
+        }
     });
 
     socket.on('show bells', data => {
@@ -26,7 +36,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.on('is approve group', data => {
         if (data[1] == 0) {
-            document.querySelectorAll('.total_' + data[0]).forEach(e => e.parentNode.removeChild(e));
+            total = document.querySelectorAll('.total_' + data[0]);
+            for (var i=0; i<total.length; i++) {
+                total[i].forEach(e => e.parentNode.removeChild(e));
+            }
         }
     });
 });

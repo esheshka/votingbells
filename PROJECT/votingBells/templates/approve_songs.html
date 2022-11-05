@@ -11,9 +11,10 @@
 {% block body %}
     <div>
         {% for song in songs %}
-            <hr class="total_{{ song.id }}" align="left" width="300px"><br>
-            <div class="total_{{ song.id }}">
-                <span>
+            <div class="total_{{ song.id }} form">
+                <div>
+                    <label class="approve_label">{{ song.title }}</label>
+                    <br class="br">
                     {% if song.is_new == 1  %}
                         <input type=text list=autotitle>
                     {% else %}
@@ -24,9 +25,9 @@
                             <option>{{ title[0] }}</option>
                         {% endfor %}
                     </datalist>
-                    <h3>{{ song.title }}</h3>
-                </span>
-                <span>
+                </div>
+                <div>
+                    <label class="approve_label">{{ song.band }}</label>
                     {% if song.is_new == 1  %}
                         <input type=text list=auto>
                     {% else %}
@@ -37,16 +38,15 @@
                             <option>{{ band[0] }}</option>
                         {% endfor %}
                     </datalist>
-                    <h3>{{ song.band }}</h3>
-                </span>
-                <div>
-                    <h3 id="likes_{{ song.id }}">{{ song.recent_likes }}</h3>
                 </div>
                 <div>
-                    <button data-id="{{ song.id }}" data-approve="Yes">Approve</button>
-                    <button data-id="{{ song.id }}" data-approve="No">Disapprove</button>
+                    <button class="approve_button" data-id="{{ song.id }}" data-approve="Yes">Approve</button>
+                    <button class="approve_button" data-id="{{ song.id }}" data-approve="No">Disapprove</button>
                 </div>
             </div>
         {% endfor %}
+        {% if songs == [] %}
+            <span class="title">Пока нет предложенных песен</span>
+        {% endif %}
     </div>
 {% endblock %}

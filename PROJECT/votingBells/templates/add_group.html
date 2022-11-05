@@ -3,32 +3,38 @@
 {% block title %} Add group {% endblock %}
 
 {% block body %}
-    <form action="{{ url_for('add_group') }}" method="post">
-    {{ form.hidden_tag() }}
+    <form class="form" action="{{ url_for('add_group') }}" method="post">
+        {{ form.hidden_tag() }}
 
-    {% for field in form if field.name not in ['csrf_token', 'submit'] -%}
-        <p> {{ field.label() }}
-            {% if field.errors %}
-                {{ field(class="invalid") }}
-                <span>
-                    {% for e in field.errors %}
-                        {{ e }}
-                    {% endfor %}
-                </span>
-            {% elise  %}
-                {% if field.name == 'title' %}
-                    {{ field(list='autotitle') }}
-                    <datalist id="autotitle">
-                        {% for title in titles %}
-                            <option>{{ title[0] }}</option>
+        {% for field in form if field.name not in ['csrf_token', 'submit'] -%}
+            <div>
+                {{ field.label(class='label') }}
+                {% if field.errors %}
+                    {{ field(class="invalid") }}
+                    <span>
+                        {% for e in field.errors %}
+                            {{ e }}
                         {% endfor %}
-                    </datalist>
-                {% else %}
-                    {% field() %}
+                    </span>
+                {% else  %}
+                    {% if field.name == 'title' %}
+                        <br class="br">
+                        {{ field(list='autotitle') }}
+                        <datalist id="autotitle">
+                            {% for title in titles %}
+                                <option>{{ title[0] }}</option>
+                            {% endfor %}
+                        </datalist>
+                    {% else %}
+                        <br class="br">
+                        {{ field() }}
+                    {% endif %}
                 {% endif %}
-            {% endif %}
-    {% endfor %}
+            </div>
+        {% endfor %}
 
-    <p> {{ form.submit() }}
+        <div>
+            {{ form.submit() }}
+        </div>
     </form>
 {% endblock %}

@@ -3,11 +3,12 @@
 {% block title %} Add song {% endblock %}
 
 {% block body %}
-    <form action="{{ url_for('add_event') }}" method="post">
+    <form class="form" action="{{ url_for('add_event') }}" method="post" enctype="multipart/form-data">
         {{ form.hidden_tag() }}
 
         {% for field in form if field.name not in ['csrf_token', 'submit'] -%}
-            <p> {{ field.label() }}
+            <div>
+                {{ field.label(class='label') }}
                 {% if field.errors %}
                     {{ field(class="invalid") }}
                     <span>
@@ -15,11 +16,15 @@
                             {{ e }}
                         {% endfor %}
                     </span>
-                {% else %}
+                {% else  %}
+                    <br class="br">
                     {{ field() }}
                 {% endif %}
+            </div>
         {% endfor %}
 
-        <p> {{ form.submit() }}
+        <div>
+            {{ form.submit() }}
+        </div>
     </form>
 {% endblock %}

@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import os
+import datetime
 
 
 app = Flask(__name__)
@@ -18,7 +19,7 @@ class Users(db.Model):
     psw = db.Column(db.String(500), nullable=True)
     bells = db.Column(db.Integer, default=10)
     position = db.Column(db.String, default='user')
-    avatar = db.Column(db.LargeBinary, default=None)
+    confirmed = db.Column(db.Boolean, nullable=False, default=False)
 
 
 class Songs(db.Model):
@@ -70,6 +71,7 @@ class Events(db.Model):
     photo = db.Column(db.LargeBinary, default=None)
     text = db.Column(db.String(500))
     access_level = db.Column(db.String(50))
+    time = db.Column(db.DateTime, default=datetime.datetime.now())
 
 def create_db():
     global db

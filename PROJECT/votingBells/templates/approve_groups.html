@@ -11,9 +11,10 @@
 {% block body %}
     <div>
         {% for group in groups %}
-            <hr class="total_{{ group.id }}" align="left" width="300px"><br>
-            <div class="total_{{ group.id }}">
-                <span>
+            <div class="total_{{ group.id }} form">
+                <div>
+                    <label class="approve_label">{{ group.title }}</label>
+                    <br class="br">
                     {% if group.is_new == 1  %}
                         <input type=text list=autotitle>
                     {% else %}
@@ -24,16 +25,15 @@
                             <option>{{ title[0] }}</option>
                         {% endfor %}
                     </datalist>
-                    <h3>{{ group.title }}</h3>
-                </span>
-                <div>
-                    <h3 id="likes_{{ group.id }}">{{ group.recent_likes }}</h3>
                 </div>
                 <div>
-                    <button data-id="{{ group.id }}" data-approve="Yes">Approve</button>
-                    <button data-id="{{ group.id }}" data-approve="No">Disapprove</button>
+                    <button class="approve_button" data-id="{{ group.id }}" data-approve="Yes">Approve</button>
+                    <button class="approve_button" data-id="{{ group.id }}" data-approve="No">Disapprove</button>
                 </div>
             </div>
         {% endfor %}
+        {% if groups == [] %}
+            <span class="title">Пока нет предложенных тем</span>
+        {% endif %}
     </div>
 {% endblock %}
