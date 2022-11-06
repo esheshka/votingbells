@@ -1,6 +1,6 @@
 from flask import render_template, url_for, redirect, request, make_response
 # Скрипт, определяющий базу данных, импортируются таблицы
-from database_creater import Users, Songs, Groups, Users_choices_songs, Users_choices_groups, Groups_Songs, Events, create_db, app, db
+from database_creater import Users, Corp_Users, Songs, Groups, Users_choices_songs, Users_choices_groups, Groups_Songs, Events, create_db, app, db
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 # Скрипт WTForms определяющий forms, упрощающий с ними работу
@@ -9,15 +9,20 @@ from forms_manager import Log_in_form, Sign_up_form, Add_song, Add_group, Add_ev
 from login_user import User_login
 from flask_socketio import SocketIO, emit
 from base64 import b64encode
-from sqlite3 import Binary
+import smtplib
+from email.mime.text import MIMEText
+from flask_mail import Mail, Message
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
 
 login_manager = LoginManager(app)
 login_manager.login_view = '/log_in'
 
 
+s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
+
 socketio = SocketIO()
 socketio.init_app(app)
-
 
 voting_songs_or_groups = 'groups'
 
@@ -93,6 +98,11 @@ def voting_songs():
 @app.route('/voting_groups')
 @login_required
 def voting_groups():
+    # msg = Message('Hello', sender='as.yushinskiy@gmail.com', recipients=['as.yushinskiy@gmail.com'])
+    # msg.body = "Hello Flask message sent from Flask-Mail"
+    # mail.send(msg)
+
+
     groups = Groups.query.order_by(Groups.recent_likes.desc()).all()
     user_likes = Users_choices_groups.query.filter_by(user_id=current_user.get_id())
     id_groups = db.session.query(Users_choices_groups.group_id).filter_by(user_id=current_user.get_id()).all()
@@ -273,7 +283,7 @@ def add_group():
 def approve_songs():
     if current_user.get_position() in ['chief', 'admin']:
         return render_template('approve_songs.html', voting_songs_or_groups=voting_songs_or_groups,
-                               songs=Songs.query.filter_by(approved=0).order_by(Songs.likes).all(),
+                               songs=Songs.query.filter_by(approved=0).order_by(Songs.likes.desc()).all(),
                                titles=db.session.query(Songs.title).filter(Songs.approved == 1).all(),
                                bands=db.session.query(Songs.band).all())
     else:
@@ -287,7 +297,7 @@ def approve_songs():
 def approve_groups():
     if current_user.get_position() in ['chief', 'admin']:
         return render_template('approve_groups.html', voting_songs_or_groups=voting_songs_or_groups,
-                               groups=Groups.query.filter_by(approved=0).order_by(Groups.likes).all(),
+                               groups=Groups.query.filter_by(approved=0).order_by(Groups.likes.desc()).all(),
                                titles=db.session.query(Groups.title).filter(Groups.approved == 1).all())
     else:
         return redirect(url_for('voting'))
@@ -376,20 +386,56 @@ def return_bells_by_group(id):
 def sign_up():
     form = Sign_up_form()
     if form.validate_on_submit():
-        try:
-            hash = generate_password_hash(form.psw.data)
-            u = Users(email=form.email.data, psw=hash)
-            db.session.add(u)
-            db.session.flush()
-            db.session.commit()
-            return redirect(url_for('log_in'))
-        except:
-            db.session.rollback()
-            print("Ошибка добавления в БД")
+        corp_user = Corp_Users.query.filter_by(email=form.corp_email.data)
+        if corp_user.count() == 0:
+            return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form, error='Ученик не найден')
+        else:
+            try:
+                user = Users.query.filter_by(confirmed=0).filter_by(corp_email=corp_user.first().email)
+                hash = generate_password_hash(form.psw.data)
+                if user.count() > 0:
+                    user = user.first()
+                    user.login = form.login.data
+                    user.psw = hash
+                else:
+                    user = Users(login=form.login.data, psw=hash, grade=corp_user.first().grade, corp_email=corp_user.first().email)
+                    db.session.add(user)
+                db.session.flush()
+                db.session.commit()
+            except:
+                db.session.rollback()
+                print("Ошибка добавления в БД")
+                return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form, error='Пользователь с такой почтой уже зарегистрирован')
 
-        return redirect(url_for('voting'))
+            token = s.dumps(form.corp_email.data, salt='email-confirm')
+            link = url_for('confirm_email', token=token, external=True)
+            sender = 'as.yushinskiy@gmail.com'
+            password = 'clzaoekwnqguzmom'
+            server = smtplib.SMTP('smtp.gmail.com', 587)
+            server.starttls()
+            try:
+                server.login(sender, password)
+                msg = MIMEText(link)
+                msg['Subject'] = 'Click'
+                server.sendmail(sender, form.corp_email.data, msg.as_string())
+            except:
+                print('плак')
+
+            return 'Подтвердите свой email'
 
     return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form)
+
+
+@app.route('/confirm_email/<token>')
+def confirm_email(token):
+    try:
+        email = s.loads(token, salt='email-confirm', max_age=60)
+    except SignatureExpired:
+        return 'The token is expired'
+    user = Users.query.filter_by(corp_email=email).first()
+    user.confirmed = True
+    db.session.commit()
+    return redirect(url_for('log_in'))
 
 
 # Вход
@@ -399,8 +445,11 @@ def log_in():
         return redirect(url_for('profile'))
     form = Log_in_form()
     if form.validate_on_submit():
-        if Users.query.filter_by(email=form.email.data).count() > 0 and check_password_hash(Users.query.filter_by(email=form.email.data).first().psw, form.psw.data):
-            user_login = User_login().create(Users.query.filter_by(email=form.email.data).first())
+        if Users.query.filter_by(login=form.login.data).count() > 0 and \
+                check_password_hash(Users.query.filter_by(login=form.login.data).first().psw, form.psw.data):
+            if Users.query.filter_by(login=form.login.data).first().confirmed == 0:
+                return render_template('log_in.html', voting_songs_or_groups=voting_songs_or_groups, form=form, error='Подтвердите свою копоративную почту')
+            user_login = User_login().create(Users.query.filter_by(login=form.login.data).first())
             login_user(user_login, remember=form.remember.data)
             return redirect(url_for('profile'))
 
@@ -429,9 +478,10 @@ def events():
     access = []
     level = 0
     if current_user.get_position() not in ['chief', 'admin']:
-        events = Events.query.filter((Events.access_level == 'all') | (Events.access_level == position_groups.get(current_user.get_position()))).all()
+        events = Events.query.filter((Events.access_level == 'all') | (Events.access_level == position_groups.get(current_user.get_position())))
     else:
-        events = Events.query.all()
+        events = Events.query
+    events = events.order_by(Events.time.desc())
     return render_template('events.html', voting_songs_or_groups=voting_songs_or_groups, events=events)
 
 
@@ -469,16 +519,22 @@ def event_img(event_id):
 
 @app.route('/test', methods=['GET', 'POST'])
 def test():
-    if request.method == 'POST':
-        file = request.files['file']
-        print(file)
-        print(type(file))
-        event = Events.query.first()
-        print(event.id)
-        event.photo = file.read()
-        db.session.commit()
-        return f'Up {file.filename}'
-    return render_template('test.html')
+    token = s.dumps('as.yushinskiy@gmail.com', salt='email-confirm')
+    link = url_for('confirm_email', token=token, external=True)
+    sender = 'as.yushinskiy@gmail.com'
+    password = 'clzaoekwnqguzmom'
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.starttls()
+    try:
+        server.login(sender, password)
+        msg = MIMEText(link)
+        msg['Subject'] = 'Click'
+        server.sendmail(sender, sender, msg.as_string())
+        return 'success'
+    except:
+        return 'error'
+
+
 
 
 if __name__ == '__main__':

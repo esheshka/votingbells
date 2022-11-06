@@ -3,9 +3,21 @@
 {% block title %} {{ song.title }} {% endblock %}
 
 {% block body %}
-    <div>
-        <h2>Название - {{ song.title }}</h2>
-        <h2>Группа - {{ song.band }}</h2>
-        <h2>Темы {% for group in groups %} - {{ group.title }} {% endfor %}</h2>
+    <div id="info">
+        <span class="info-title">Название</span>
+        <br class="br">
+        <span class="info-meaning">{{ song.title }}</span>
+        <br class="br">
+        <span class="info-title">Группа</span>
+        <br class="br">
+        <span class="info-meaning">{{ song.band }}</span>
+        <br class="br">
+        <span class="info-title">Темы </span>
+        <br class="br">
+        <div class="info-meaning">
+            {% for group in groups %}
+                <span>{{ group.title }}</span>
+            {% endfor %}
+        </div>
     </div>
 {% endblock %}

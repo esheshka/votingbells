@@ -15,11 +15,22 @@ db = SQLAlchemy(app)
 
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(50), unique=True)
+    email = db.Column(db.String(50), default=None)
+    corp_email = db.Column(db.String(50), unique=True)
+    login = db.Column(db.String(50), unique=True)
     psw = db.Column(db.String(500), nullable=True)
     bells = db.Column(db.Integer, default=10)
     position = db.Column(db.String, default='user')
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
+    grade = db.Column(db.Integer)
+
+class Corp_Users(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(50), unique=True)
+    firstname = db.Column(db.String(50))
+    secondname = db.Column(db.String(50))
+    thirdname = db.Column(db.String(50))
+    grade = db.Column(db.Integer)
 
 
 class Songs(db.Model):

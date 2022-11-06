@@ -3,6 +3,6 @@
 {% block title %} Profile {% endblock %}
 
 {% block body %}
-    <p>Email: {{ current_user.get_email() }}
+    <p>Email: {{ current_user.get_login() }}
     <p>ID: {{ current_user.get_id() }}
 {% endblock %}

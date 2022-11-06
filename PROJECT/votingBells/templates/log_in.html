@@ -3,23 +3,31 @@
 {% block title %} Log in {% endblock %}
 
 {% block body %}
-    <form action="{{ url_for('log_in') }}" method="post">
-    {{ form.hidden_tag() }}
+    {% if error %}
+        {{ error }}
+    {% endif %}
+    <form class="form" action="{{ url_for('log_in') }}" method="post">
+        {{ form.hidden_tag() }}
 
-    {% for field in form if field.name not in ['csrf_token', 'submit'] -%}
-        <p> {{ field.label() }}
-            {% if field.errors %}
-                {{ field(class="invalid") }}
-                <span>
-                    {% for e in field.errors %}
-                        {{ e }}
-                    {% endfor %}
-                </span>
-            {% else %}
-                {{ field() }}
-            {% endif %}
-    {% endfor %}
+        {% for field in form if field.name not in ['csrf_token', 'submit'] -%}
+            <div>
+                {{ field.label(class='label') }}
+                {% if field.errors %}
+                    {{ field(class="invalid") }}
+                    <span>
+                        {% for e in field.errors %}
+                            {{ e }}
+                        {% endfor %}
+                    </span>
+                {% else %}
+                    <br class="br">
+                    {{ field() }}
+                {% endif %}
+            </div>
+        {% endfor %}
 
-    <p> {{ form.submit() }}
+        <div>
+            {{ form.submit() }}
+        </div>
     </form>
 {% endblock %}
