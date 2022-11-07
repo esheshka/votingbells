@@ -5,6 +5,8 @@
 {% block bells %} <div class="user_bells"><span id="bells">Bells - {{ current_user.get_bells() }}</span></div> {% endblock %}
 
 {% block scripts %}
+    <script src="{{ url_for('static', filename='socket.io.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='jquery.min.js') }}"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
     <script src="{{ url_for ('static', filename = 'likes_groups.js') }}"></script>
 {% endblock %}

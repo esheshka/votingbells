@@ -1,0 +1,27 @@
+{% extends 'menu_bar.html' %}
+
+{% block title %} {{ event.title }} {% endblock %}
+
+{% block body %}
+    <div class="event_list">
+        <div>
+            <div class="event_member">
+                <div>
+                    <span class="title">{{ event.title }}</span>
+                    <span class="time">{{ event.time }}</span>
+                </div>
+                {% if not (event.photo == None) %}
+                    <img class="event_img" src="/event_img/{{ event.id }}">
+                {% endif %}
+                <div>
+                    <span class="event_text">{{ event.text }}</span>
+                </div>
+                <div>
+                    <a href="/group/{{ group.id }}" class="title local">{{ group.title }}</a>
+                </div>
+                <br class="br">
+                <br class="br">
+            </div>
+        </div>
+    </div>
+{% endblock %}

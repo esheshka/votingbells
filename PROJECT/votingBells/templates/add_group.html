@@ -2,6 +2,12 @@
 
 {% block title %} Add group {% endblock %}
 
+{% block error %}
+{% if error %}
+    <div class="error">{{ error }}</div>
+{% endif %}
+{% endblock %}
+
 {% block body %}
     <form class="form" action="{{ url_for('add_group') }}" method="post">
         {{ form.hidden_tag() }}

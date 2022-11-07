@@ -1,6 +1,6 @@
 {% extends 'menu_bar.html' %}
 
-{% block title %} Add song {% endblock %}
+{% block title %} Регистрация {% endblock %}
 
 {% block error %}
 {% if error %}
@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block body %}
-    <form class="form" action="{{ url_for('add_event') }}" method="post" enctype="multipart/form-data">
+    <form class="form" action="{{ url_for('sec_email') }}" method="post">
         {{ form.hidden_tag() }}
 
         {% for field in form if field.name not in ['csrf_token', 'submit'] -%}

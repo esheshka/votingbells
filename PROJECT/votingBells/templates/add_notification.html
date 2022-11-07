@@ -2,6 +2,12 @@
 
 {% block title %} Add notification {% endblock %}
 
+{% block error %}
+{% if error %}
+    <div class="error">{{ error }}</div>
+{% endif %}
+{% endblock %}
+
 {% block body %}
     <form class="form" action="{{ url_for('add_notification') }}" method="post" enctype="multipart/form-data">
         {{ form.hidden_tag() }}

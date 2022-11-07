@@ -16,6 +16,11 @@ class Sign_up_form(FlaskForm):
     repsw = PasswordField('Rewrite password', validators=[DataRequired(), EqualTo('psw', message='These psw are not same')])
     submit = SubmitField('Sign up')
 
+class Sec_email_form(FlaskForm):
+    email = StringField('Почта', validators=[Email()])
+    submit = SubmitField('Sign up')
+
+
 class Add_song(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
     band = StringField('Band', validators=[DataRequired()])
@@ -26,7 +31,8 @@ class Add_group(FlaskForm):
     submit = SubmitField('Add group')
 
 class Add_event(FlaskForm):
-    tag = SelectField('Тег', choices=[('new_songs', 'Новый плейлист'), ('new_group', 'Новая тема'), ('other', 'Другое')], validators=[DataRequired()])
+    title = StringField('Title')
+    tag = SelectField('Тег', choices=[('other', 'Другое'), ('new_group', 'Новая тема'), ('new_songs', 'Новый плейлист')], validators=[DataRequired()])
     text = TextAreaField('Текст', validators=[DataRequired()])
     photo = FileField('Загрузите фото')
     access_level = SelectField('Доступ')

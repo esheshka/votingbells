@@ -3,6 +3,31 @@
 {% block title %} Profile {% endblock %}
 
 {% block body %}
-    <p>Email: {{ current_user.get_login() }}
-    <p>ID: {{ current_user.get_id() }}
+    <div class="event_list">
+        <div>
+            <div class="event_member">
+                <div>
+                    <span class="title local">{{ user.login }}</span>
+                </div>
+                <div>
+                    <span class="title mini">{{ user.position }}</span>
+                </div>
+                <div>
+                    <span class="title mini">{{ user.corp_email }}</span>
+                </div>
+                {% if user.email %}
+                    <div>
+                        <span class="title mini">{{ user.email }}</span>
+                    </div>
+                {% else %}
+                    <a class="button" href="/sec_email">Добавить почту</a>
+                {% endif %}
+                <a class="button" href="/return_bells">Вернуть все bell-ы</a>
+                <a class="button" href="/log_out">Выйти</a>
+
+                <br class="br">
+                <br class="br">
+            </div>
+        </div>
+    </div>
 {% endblock %}
