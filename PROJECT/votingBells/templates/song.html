@@ -12,11 +12,42 @@
         <br class="br">
         <span class="info-meaning">{{ song.band }}</span>
         <br class="br">
+        {% if not (song.bell == None) %}
+            <audio controls="controls">
+                <source src="/song_bell/{{ song.id }}" type="audio/mpeg"/>
+            </audio>
+        {% endif %}
+        {% if current_user.get_position() in ['admin', 'chief', 'cutter'] %}
+            <form action="/song/{{song.id}}" method="post" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+
+                {% for field in form if field.name not in ['csrf_token', 'submit'] -%}
+                    <div>
+                        {{ field.label(class='label') }}
+                        {% if field.errors %}
+                            {{ field(class="invalid") }}
+                            <span>
+                                {% for e in field.errors %}
+                                    {{ e }}
+                                {% endfor %}
+                            </span>
+                        {% else %}
+                            <br class="br">
+                            {{ field( class="info-meaning") }}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <div>
+                    {{ form.submit() }}
+                </div>
+            </form>
+        {% endif %}
         <span class="info-title">Темы </span>
         <br class="br">
         <div class="info-meaning">
             {% for group in groups %}
-                <span>{{ group.title }}</span>
+                <span>{{ group }}</span>
             {% endfor %}
         </div>
     </div>

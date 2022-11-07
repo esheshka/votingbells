@@ -2,11 +2,6 @@
 
 {% block title %} Events {% endblock %}
 
-{% block scripts %}
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
-{% endblock %}
-
-
 {% block body %}
     <div class="event_list">
         <div>
@@ -21,6 +16,7 @@
                     <div>
                         <span class="event_text">{{ event.text }}</span>
                     </div>
+                    <a href="/event/{{ event.id }}"></a>
                 </div>
                 <br>
             {% endfor %}

@@ -1,10 +1,11 @@
-from flask import render_template, url_for, redirect, request, make_response
+from flask import render_template, url_for, redirect, request, make_response, send_file
 # Скрипт, определяющий базу данных, импортируются таблицы
-from database_creater import Users, Corp_Users, Songs, Groups, Users_choices_songs, Users_choices_groups, Groups_Songs, Events, create_db, app, db
+from database_creater import Users, Corp_Users, Songs, Choosen_Songs, Groups, Users_choices_songs, Users_choices_groups, \
+    Groups_Songs, Events, Notifications, create_db, app, db
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 # Скрипт WTForms определяющий forms, упрощающий с ними работу
-from forms_manager import Log_in_form, Sign_up_form, Add_song, Add_group, Add_event
+from forms_manager import Log_in_form, Sign_up_form, Add_song, Add_group, Add_event, Add_notification, Upload_bell
 # Скрипт, для получения данных о пользователе
 from login_user import User_login
 from flask_socketio import SocketIO, emit
@@ -13,6 +14,7 @@ import smtplib
 from email.mime.text import MIMEText
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
+from io import BytesIO
 
 login_manager = LoginManager(app)
 login_manager.login_view = '/log_in'
@@ -98,11 +100,6 @@ def voting_songs():
 @app.route('/voting_groups')
 @login_required
 def voting_groups():
-    # msg = Message('Hello', sender='as.yushinskiy@gmail.com', recipients=['as.yushinskiy@gmail.com'])
-    # msg.body = "Hello Flask message sent from Flask-Mail"
-    # mail.send(msg)
-
-
     groups = Groups.query.order_by(Groups.recent_likes.desc()).all()
     user_likes = Users_choices_groups.query.filter_by(user_id=current_user.get_id())
     id_groups = db.session.query(Users_choices_groups.group_id).filter_by(user_id=current_user.get_id()).all()
@@ -129,6 +126,31 @@ def change_voting():
             db.session.execute('UPDATE users SET bells=10')
             db.session.execute('UPDATE groups SET recent_likes=0')
             db.session.commit()
+
+            songs = []
+            for song in Songs.query.order_by(Songs.recent_likes.desc()).all():
+                if song.is_new == 1:
+                    song.approved = 1
+                    song.is_new = 0
+                    gs = Groups_Songs(song_id=song.id, group_id=selected_group)
+                    db.session.add(gs)
+
+                if Groups_Songs.query.filter_by(song_id=song.id).filter_by(
+                        group_id=selected_group).count() > 0 or song.approved == 0:
+                    songs.append(song)
+                    if len(songs) == 20:
+                        break
+            cs = db.session.query(Choosen_Songs).order_by(Choosen_Songs.num.desc()).first()
+            if cs==None:
+                num = 0
+            else:
+                num = cs.num + 1
+            for song in songs:
+                cs = Choosen_Songs(song_id=song.id, num=num)
+                db.session.add(cs)
+            db.session.flush()
+            db.session.commit()
+
             return redirect(url_for('voting_groups'))
         else:
             selected_group = Groups.query.order_by(Groups.recent_likes.desc()).first().id
@@ -238,7 +260,9 @@ def add_song():
         song = Songs.query.filter_by(title=form.title.data).filter_by(band=form.band.data)
         if song.count() > 0:
             if Groups_Songs.query.filter_by(song_id=song.first().id).filter_by(group_id=selected_group).count() > 0:
-                print('There is the same song')
+                return render_template('add_song.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
+                                       titles=db.session.query(Songs.title).filter(Songs.approved == 1).all(),
+                                       bands=db.session.query(Songs.band).all(), error='Эта песня уже находится в теме')
             else:
                 song.first().offered_group = selected_group
                 song.first().approved = 0
@@ -350,19 +374,47 @@ def get_bells():
 
 
 # Страница песни по id
-@app.route('/song/<id>')
+@app.route('/song/<id>', methods=['GET', 'POST'])
 @login_required
 def song(id):
+    if Songs.query.filter_by(id=id).count() == 0:
+        return redirect(url_for('voting'))
+
+    form = Upload_bell()
+    if form.validate_on_submit():
+        try:
+            song = Songs.query.filter_by(id=id).first()
+            if form.bell.data:
+                bell = form.bell.data
+                name = int(str(bell.filename)[:-4])
+                bell = bell.read()
+                song.bell = None
+                db.session.flush()
+                db.session.commit()
+                song.bell = bell
+                song.name = name
+                db.session.flush()
+                db.session.commit()
+                print(f'Песня {name} успешно добавленна')
+        except:
+            db.session.rollback()
+            print("Ошибка добавления в БД")
+
     groups = []
     for group in Groups_Songs.query.filter_by(song_id=id).all():
-        groups.append(Groups.query.filter_by(id=group.group_id).first())
-    return render_template('song.html', song=Songs.query.filter_by(id=id).first(), groups=groups, voting_songs_or_groups=voting_songs_or_groups)
+        groups.append(Groups.query.filter_by(id=group.group_id).first().title)
+
+    return render_template('song.html', song=Songs.query.filter_by(id=id).first(), groups=groups,
+                           voting_songs_or_groups=voting_songs_or_groups, form=form)
 
 
 # Страница темы по id
 @app.route('/group/<id>')
 @login_required
 def group(id):
+    if Groups.query.filter_by(id=id).count() == 0:
+        return redirect(url_for('voting'))
+
     songs = []
     for song in Groups_Songs.query.filter_by(group_id=id).all():
         songs.append(Songs.query.filter_by(id=song.song_id).first())
@@ -413,15 +465,14 @@ def sign_up():
             password = 'clzaoekwnqguzmom'
             server = smtplib.SMTP('smtp.gmail.com', 587)
             server.starttls()
-            try:
-                server.login(sender, password)
-                msg = MIMEText(link)
-                msg['Subject'] = 'Click'
-                server.sendmail(sender, form.corp_email.data, msg.as_string())
-            except:
-                print('плак')
 
-            return 'Подтвердите свой email'
+            server.login(sender, password)
+            msg = MIMEText('Confirm link: ' + link)
+            msg['Subject'] = 'Confirm email'
+            server.sendmail(sender, form.corp_email.data, str(msg))
+            print(f'Письмо отправленно на {form.corp_email.data}')
+
+            return render_template('log_in.html', voting_songs_or_groups=voting_songs_or_groups, form=form, error='Подтвердите email ссылкой на почте')
 
     return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form)
 
@@ -452,6 +503,8 @@ def log_in():
             user_login = User_login().create(Users.query.filter_by(login=form.login.data).first())
             login_user(user_login, remember=form.remember.data)
             return redirect(url_for('profile'))
+        else:
+            return render_template('log_in.html', voting_songs_or_groups=voting_songs_or_groups, form=form, error='Неверный логин или пароль')
 
     return render_template('log_in.html', voting_songs_or_groups=voting_songs_or_groups, form=form)
 
@@ -475,13 +528,11 @@ def profile():
 @app.route('/events')
 @login_required
 def events():
-    access = []
-    level = 0
     if current_user.get_position() not in ['chief', 'admin']:
         events = Events.query.filter((Events.access_level == 'all') | (Events.access_level == position_groups.get(current_user.get_position())))
     else:
         events = Events.query
-    events = events.order_by(Events.time.desc())
+    events = events.order_by(Events.time.desc()).all()
     return render_template('events.html', voting_songs_or_groups=voting_songs_or_groups, events=events)
 
 
@@ -500,13 +551,36 @@ def add_event():
         access_level = form.access_level.data
         if form.access_level.data == 'local':
             access_level = position_groups.get(current_user.get_position())
-        new_event = Events(title=form.title.data, tag=form.tag.data, text=form.text.data, access_level=access_level)
+        new_event = Events(title=form.title.data, tag=form.tag.data, text=form.text.data, access_level=access_level, user_id=current_user.get_id())
         if form.photo.data:
             new_event.photo = form.photo.data.read()
+        if form.tag.data == 'new_songs':
+            cs = db.session.query(Choosen_Songs).order_by(Choosen_Songs.num.desc()).first()
+            if cs == None:
+                num = 0
+            else:
+                num = cs.num
+            new_event.cs = num
         db.session.add(new_event)
         db.session.commit()
         return redirect(url_for('events'))
     return render_template('add_event.html', voting_songs_or_groups=voting_songs_or_groups, form=form)
+
+
+@app.route('/event/<id>')
+@login_required
+def event(id):
+    if Events.query.filter_by(id=id).count() == 0:
+        return redirect(url_for('404'))
+
+    event = Events.query.filter_by(id=id).first()
+    if event.tag == 'new_songs':
+        num = event.cs
+        cs = Choosen_Songs.query.filter_by(num=num).all()
+        songs=[]
+        for i in cs:
+            songs.append(Songs.query.filter_by(id=i.song_id).first())
+        return render_template('new_songs.html', event=event, songs=songs)
 
 
 @app.route('/event_img/<event_id>')
@@ -517,24 +591,51 @@ def event_img(event_id):
     return h
 
 
+@app.route('/notifications')
+@login_required
+def notifications():
+    if current_user.get_position() not in ['chief', 'admin']:
+        notifications = Notifications.query.filter((Notifications.access_level == 'all') |
+                                                   (Notifications.access_level == position_groups.get(current_user.get_position())))
+    else:
+        notifications = Notifications.query
+    notifications = notifications.order_by(Notifications.time.desc()).all()
+    return render_template('notifications.html', voting_songs_or_groups=voting_songs_or_groups, notifications=notifications)
+
+
+@app.route('/add_notification', methods=['GET', 'POST'])
+@login_required
+def add_notification():
+    if current_user.get_position() == 'user':
+        return redirect(url_for('notifications'))
+    form = Add_notification()
+    if current_user.get_position() in ['chief', 'admin']:
+        form.access_level.choices = [('local', 'Админы'), ('all', 'Все'), ('design', 'Дизайнеры'), ('tech', 'Техники')]
+    else:
+        form.access_level.choices = [('local', 'Отдел'), ('all', 'Все')]
+
+    if form.validate_on_submit():
+        access_level = form.access_level.data
+        if form.access_level.data == 'local':
+            access_level = position_groups.get(current_user.get_position())
+
+        new_notification = Notifications(text=form.text.data, access_level=access_level, user_id=current_user.get_id())
+
+        db.session.add(new_notification)
+        db.session.commit()
+        return redirect(url_for('notifications'))
+    return render_template('add_notification.html', voting_songs_or_groups=voting_songs_or_groups, form=form)
+
+
+
+@app.route('/song_bell/<song_id>')
+def song_bell(song_id):
+    return send_file(BytesIO(Songs.query.filter_by(id=song_id).first().bell), download_name=f'{Songs.query.filter_by(id=song_id).first().name}.mp3')
+
+
 @app.route('/test', methods=['GET', 'POST'])
 def test():
-    token = s.dumps('as.yushinskiy@gmail.com', salt='email-confirm')
-    link = url_for('confirm_email', token=token, external=True)
-    sender = 'as.yushinskiy@gmail.com'
-    password = 'clzaoekwnqguzmom'
-    server = smtplib.SMTP('smtp.gmail.com', 587)
-    server.starttls()
-    try:
-        server.login(sender, password)
-        msg = MIMEText(link)
-        msg['Subject'] = 'Click'
-        server.sendmail(sender, sender, msg.as_string())
-        return 'success'
-    except:
-        return 'error'
-
-
+    return render_template('test.html')
 
 
 if __name__ == '__main__':

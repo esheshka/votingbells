@@ -1,0 +1,32 @@
+{% extends 'menu_bar.html' %}
+
+{% block title %} {{ event.title }} {% endblock %}
+
+{% block body %}
+    <div class="event_list">
+        <div>
+            <div class="event_member">
+                <div>
+                    <span class="title">{{ event.title }}</span>
+                    <span class="time">{{ event.time }}</span>
+                </div>
+                {% if not (event.photo == None) %}
+                    <img class="event_img" src="/event_img/{{ event.id }}">
+                {% endif %}
+                <div>
+                    <span class="event_text">{{ event.text }}</span>
+                </div>
+                {% for song in songs %}
+                    <span class="title local">{{ song.title }}</span>
+                    {% if not (song.bell == None) %}
+                        <audio controls="controls">
+                            <source src="/song_bell/{{ song.id }}" type="audio/mpeg"/>
+                        </audio>
+                    {% endif %}
+                {% endfor %}
+                <br class="br">
+                <br class="br">
+            </div>
+        </div>
+    </div>
+{% endblock %}

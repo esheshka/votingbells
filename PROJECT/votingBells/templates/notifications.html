@@ -1,0 +1,18 @@
+{% extends 'menu_bar.html' %}
+
+{% block title %} Notifications {% endblock %}
+
+{% block body %}
+    <div class="event_list">
+        <div>
+            {% for notification in notifications %}
+                <div class="event_member">
+                    <div>
+                        <span class="event_text">{{ notification.text }}</span>
+                    </div>
+                </div>
+                <br>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

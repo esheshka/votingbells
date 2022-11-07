@@ -16,6 +16,7 @@ a:focus, a:active{outline: none;}
 nav, footer, header, aside {display: block;}
 
 html, body {
+    position: relative;
     height: 100%;
     width: 100%;
     font-size: 100%;
@@ -138,7 +139,7 @@ input.string {
     margin-left: auto;
     margin-right: auto;
     width: 40%;
-    min-width: 800px;
+    min-width: min(800px, 100%);
     background: white;
     padding: 10px 20px 20px 20px;
     box-shadow: 2px 2px 10px black;
@@ -183,7 +184,7 @@ input.string {
     max-width: calc(100% - 50px);
 	cursor: pointer;
 }
-.form button, .form #submit {
+.form button, #submit {
     font-size: 30px;
     background: rgba(255, 255, 255, 1);
     box-shadow: 2px 2px 10px black;
@@ -242,8 +243,8 @@ div.total {
     filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cd2ad6', endColorstr='#007db9e8',GradientType=1 );
 */
 }
-.approved.no a {
-    background: yellow;
+.approved.no {
+    box-shadow: inset 2px 2px 10px red;
 }
 
 .approved a {
@@ -327,12 +328,24 @@ hr.new_title {
     padding: 10px;
 }
 .event_member {
+    position: relative;
     margin-left: auto;
     margin-right: auto;
     max-width: 800px;
     padding: 1px 20px;
     background: white;
     box-shadow: 2px 2px 10px black;
+}
+.event_member a {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: transparent;
+    height: 100%;
+    width: 100%;
+    margin: 0px;
+    font-size: 25px;
+    box-shadow: none;
 }
 .event_member > div {
     margin: 20px 0;
@@ -400,4 +413,27 @@ button.approve_button {
 }
 #info .info-meaning span {
     margin: 0 10px;
+}
+
+.error {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    left: max(calc(50% - 250px), 0px);
+    min-left: 0px;
+    width: 100%;
+    max-width: 500px;
+    margin: 10px 0px;
+    font-size: 25px;
+    background: red;
+    box-shadow: inset 2px 2px 10px black;
+    padding: 10px;
+    z-index:3;
+}
+
+.time {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }

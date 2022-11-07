@@ -7,11 +7,14 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
         <link rel="stylesheet" href="{{ url_for ('static', filename = 'main.css') }}">
+
+        <link rel="shortcut icon" href="#">
         {% block scripts %}{% endblock %}
         <title>{% block title %}{% endblock %}</title>
     </head>
 
     <body>
+        {% block error %}{% endblock %}
         <a class="menu_close open" href="#menu_back">Y</a>
         {% block bells %}{% endblock %}
         <div class="body_local">
@@ -55,6 +58,12 @@
                 {% endif %}
                 {% if current_user.is_authenticated and current_user.get_position() in ['admin', 'chief'] %}
                     <a class="menu_member" href="/add_event">Создать событие</a>
+                {% endif %}
+                {% if current_user.is_authenticated %}
+                    <a class="menu_member" href="/notifications">Уведомления</a>
+                {% endif %}
+                {% if current_user.is_authenticated and current_user.get_position() in ['admin', 'chief'] %}
+                    <a class="menu_member" href="/add_notification">Создать уведомление</a>
                 {% endif %}
                 {% if current_user.is_authenticated and current_user.get_position() in ['admin', 'chief'] %}
                     <a class="menu_member" href="/change_voting">Завершить голосование</a>

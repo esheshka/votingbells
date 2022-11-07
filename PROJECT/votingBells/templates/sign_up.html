@@ -1,11 +1,14 @@
 {% extends 'menu_bar.html' %}
 
-{% block title %} Profile {% endblock %}
+{% block title %} Регистрация {% endblock %}
+
+{% block error %}
+{% if error %}
+    <div class="error">{{ error }}</div>
+{% endif %}
+{% endblock %}
 
 {% block body %}
-    {% if error %}
-        {{ error }}
-    {% endif %}
     <form class="form" action="{{ url_for('sign_up') }}" method="post">
         {{ form.hidden_tag() }}
 

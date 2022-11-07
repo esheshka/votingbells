@@ -38,6 +38,7 @@ class Songs(db.Model):
     title = db.Column(db.String(100), nullable=True)
     band = db.Column(db.String(100), nullable=True)
     bell = db.Column(db.LargeBinary, default=None)
+    name = db.Column(db.Integer, default=None)
     offered_group = db.Column(db.Integer)
     is_new = db.Column(db.Integer, default=1)
     approved = db.Column(db.Integer, default=0)
@@ -77,15 +78,35 @@ class Groups_Songs(db.Model):
 
 class Events(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     title = db.Column(db.String(50))
+    cs = db.Column(db.Integer, default=None)
     tag = db.Column(db.String(500))
     photo = db.Column(db.LargeBinary, default=None)
     text = db.Column(db.String(500))
     access_level = db.Column(db.String(50))
     time = db.Column(db.DateTime, default=datetime.datetime.now())
 
+
+class Notifications(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    title = db.Column(db.String(50))
+    text = db.Column(db.String(500))
+    access_level = db.Column(db.String(50))
+    time = db.Column(db.DateTime, default=datetime.datetime.now())
+
+
+class Choosen_Songs(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    num = db.Column(db.Integer)
+    song_id = db.Column(db.Integer, db.ForeignKey('songs.id'))
+
+
 def create_db():
     global db
     global app
     with app.app_context():
         db.create_all()
+
+
