@@ -26,7 +26,7 @@ db = SQLAlchemy(app)
 
 # Данные для отправки писем
 sender = 'lyceumbells@gmail.com'
-password = 'ffcginsdzvekrcog'
+password = 'ezfguqnbehmycrfq'
 
 # Управление токенами
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
@@ -99,7 +99,7 @@ class Events(db.Model):
     photo = db.Column(db.LargeBinary, default=None)
     text = db.Column(db.String(500))
     access_level = db.Column(db.String(50))
-    time = db.Column(db.DateTime, default=datetime.datetime.now())
+    time = db.Column(db.DateTime)
 
 class Notifications(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -107,7 +107,7 @@ class Notifications(db.Model):
     title = db.Column(db.String(50))
     text = db.Column(db.String(500))
     access_level = db.Column(db.String(50))
-    time = db.Column(db.DateTime, default=datetime.datetime.now())
+    time = db.Column(db.DateTime)
 
 class Choosen_Songs(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -285,7 +285,7 @@ def change_voting():
                 text += '\n' + f'{i}) {song.title}'
                 i += 1
             print(text)
-            note = Notifications(user_id=current_user.get_id(), title='Новый плейлист', text=text, access_level='all')
+            note = Notifications(user_id=current_user.get_id(), title='Новый плейлист', text=text, access_level='all', time=datetime.datetime.now())
             db.session.add(note)
             db.session.flush()
             db.session.commit()
@@ -305,7 +305,7 @@ def change_voting():
             # Создание Уведомления о новой теме
             text = f'Новая тема - {Groups.query.filter_by(id=selected_group).first().title}!'
             print(text)
-            note = Notifications(user_id=current_user.get_id(), title='Новая тема', text=text, access_level='all')
+            note = Notifications(user_id=current_user.get_id(), title='Новая тема', text=text, access_level='all', time=datetime.datetime.now())
             db.session.add(note)
             db.session.flush()
             db.session.commit()
@@ -683,7 +683,8 @@ def sign_up():
             # msg = MIMEText('Confirm link: https://flask-test-esheshka.herokuapp.com/' + link)
             msg = MIMEText('Confirm link: http://127.0.0.1:5000' + link)
             msg['Subject'] = 'Confirm email'
-            server.sendmail(sender, form.corp_email.data, str(msg))
+            a = server.sendmail(sender, form.corp_email.data, str(msg))
+            print(a)
 
             return redirect(url_for('log_in'))
 
@@ -819,7 +820,8 @@ def add_event():
         if form.access_level.data == 'local':
             access_level = position_groups.get(current_user.get_position())
 
-        new_event = Events(title=form.title.data, tag=form.tag.data, text=form.text.data, access_level=access_level, user_id=current_user.get_id())
+        new_event = Events(title=form.title.data, tag=form.tag.data, text=form.text.data, access_level=access_level,
+                           user_id=current_user.get_id(), time=datetime.datetime.now())
 
         if form.photo.data:
             new_event.photo = form.photo.data.read()
@@ -908,7 +910,7 @@ def add_notification():
         if form.access_level.data == 'local':
             access_level = position_groups.get(current_user.get_position())
 
-        new_notification = Notifications(text=form.text.data, access_level=access_level, user_id=current_user.get_id())
+        new_notification = Notifications(text=form.text.data, access_level=access_level, user_id=current_user.get_id(), time=datetime.datetime.now())
 
         db.session.add(new_notification)
         db.session.commit()
