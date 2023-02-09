@@ -34,9 +34,6 @@ class User_login():
     def get_bells(self):
         return self.__user.bells if self.__user else 0
 
-    def get_login(self):
-        return self.__user.login
-
 
     def is_png(self, filename):
         ext = filename.rsplit('.', 1)[1]
