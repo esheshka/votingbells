@@ -31,7 +31,7 @@ socketio = SocketIO(app, async_mode='eventlet')
 
 # Данные для отправки писем
 sender = 'lyceumbells@gmail.com'
-password = 'ffcginsdzvekrcog'
+password = 'drbjurwphiqidnht'
 
 # Управление токенами
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
@@ -674,16 +674,19 @@ def sign_up():
                 print("Ошибка добавления в БД")
                 return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form, error='Пользователь с такой почтой уже зарегистрирован')
 
+
             # Создание письма подтверждения почты
+            print('К созданию письма приступили')
             token = s.dumps(form.corp_email.data, salt='email-confirm')
             link = url_for('confirm_corp_email', token=token, external=True)
             server = smtplib.SMTP('smtp.gmail.com', 587)
             server.starttls()
             server.login(sender, password)
             # msg = MIMEText('Confirm link: https://flask-test-esheshka.herokuapp.com/' + link)
-            msg = MIMEText('Confirm link: http://127.0.0.1:5000' + link)
+            msg = MIMEText('Confirm link: http://lyceumbells.ru/' + link)
             msg['Subject'] = 'Confirm email'
-            server.sendmail(sender, form.corp_email.data, str(msg))
+            server.sendmail(sender, ['lyceumbells@gmail.com', form.corp_email.data], str(msg))
+            print(f'Письмо отправленно на {form.corp_email.data}')
 
             return redirect(url_for('log_in'))
 
@@ -705,9 +708,9 @@ def sec_email():
         server.starttls()
         server.login(sender, password)
         # msg = MIMEText('Confirm link: https://flask-test-esheshka.herokuapp.com' + link)
-        msg = MIMEText('Confirm link: http://127.0.0.1:5000' + link)
+        msg = MIMEText('Confirm link: http://lyceumbells.ru/' + link)
         msg['Subject'] = 'Confirm email'
-        server.sendmail(sender, form.email.data, str(msg))
+        server.sendmail(sender, ['lyceumbells@gmail.com', form.email.data], str(msg))
         print(f'Письмо отправленно на {form.email.data}')
 
         return redirect(url_for('profile'))
@@ -946,9 +949,21 @@ def return_bells():
     return redirect(url_for('voting'))
 
 
-# @app.route('/test', methods=['GET', 'POST'])
-# def test():
-#     return render_template('test.html')
+@app.route('/test', methods=['GET', 'POST'])
+def test():
+    print('К созданию письма приступили')
+    token = s.dumps('as.yushinskiy@gmail.com', salt='email-confirm')
+    link = url_for('confirm_corp_email', token=token, external=True)
+    server = smtplib.SMTP('smtp.gmail.com')
+    server.starttls()
+    server.login(sender, password)
+    # msg = MIMEText('Confirm link: https://flask-test-esheshka.herokuapp.com/' + link)
+    msg = MIMEText('Confirm link: http://127.0.0.1:5000' + link)
+    msg['Subject'] = 'Confirm email'
+    server.sendmail(sender, ['lyceumbells@gmail.com', 'esheshka@yandex.ru'], str(msg))
+    print(f'Письмо отправленно на as.yushinskiy@gmail.com')
+
+    return render_template('test.html')
 
 
 # port = int(os.environ.get('PORT', 5000))
