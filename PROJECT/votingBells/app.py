@@ -650,10 +650,39 @@ def sign_up():
     form = Sign_up_form()
     if form.validate_on_submit():
         # Нахождение пользователя в списке учащихся
+        same_corp_email = Users.query.filter_by(corp_email=form.corp_email.data)
         corp_user = Corp_Users.query.filter_by(email=form.corp_email.data)
-        if corp_user.count() == 0:
-            return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form, error='Ученик не найден')
+        same_login = Users.query.filter_by(login=form.login.data)
+        if same_corp_email.count() != 0:
+            return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
+                                   error='Вы уже регистрировались')
+        elif corp_user.count() == 0:
+            return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
+                                   error='Ученик не найден')
+        elif form.psw.data != form.repsw.data:
+            return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
+                                   error='Пароли не совпадают')
+        elif same_login.count() != 0:
+            return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
+                                   error='Логин занят')
         else:
+            try:
+                # Создание письма подтверждения почты
+                print('К созданию письма приступили')
+                token = s.dumps(form.corp_email.data, salt='email-confirm')
+                link = url_for('confirm_corp_email', token=token, external=True)
+                server = smtplib.SMTP('smtp.gmail.com', 587)
+                server.starttls()
+                server.login(sender, password)
+                msg = MIMEText('Подтвердите email по ссылке http://lyceumbells.ru' + link)
+                msg['Subject'] = 'Подтвердите email'
+                server.sendmail(sender, ['lyceumbells@gmail.com', form.corp_email.data], str(msg))
+                print(f'Письмо отправленно на {form.corp_email.data}')
+            except:
+                print("Ошибка отправки письма")
+                return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
+                                       error='Что-то пошло не так')
+
             try:
                 # Создание\изменение учетки пользователя
                 user = Users.query.filter_by(confirmed=0).filter_by(corp_email=corp_user.first().email)
@@ -674,20 +703,6 @@ def sign_up():
                 print("Ошибка добавления в БД")
                 return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form, error='Пользователь с такой почтой уже зарегистрирован')
 
-
-            # Создание письма подтверждения почты
-            print('К созданию письма приступили')
-            token = s.dumps(form.corp_email.data, salt='email-confirm')
-            link = url_for('confirm_corp_email', token=token, external=True)
-            server = smtplib.SMTP('smtp.gmail.com', 587)
-            server.starttls()
-            server.login(sender, password)
-            # msg = MIMEText('Confirm link: https://flask-test-esheshka.herokuapp.com/' + link)
-            msg = MIMEText('Confirm link: http://lyceumbells.ru/' + link)
-            msg['Subject'] = 'Confirm email'
-            server.sendmail(sender, ['lyceumbells@gmail.com', form.corp_email.data], str(msg))
-            print(f'Письмо отправленно на {form.corp_email.data}')
-
             return redirect(url_for('log_in'))
 
     return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form)
@@ -699,19 +714,21 @@ def sec_email():
     # Обработка формы
     form = Sec_email_form()
     if form.validate_on_submit():
-        user = Users.query.filter_by(id=current_user.get_id())
-
-        # Создание письма подтверждения почты
-        token = s.dumps(form.email.data, salt='email-confirm')
-        link = url_for('confirm_email', token=token, external=True)
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(sender, password)
-        # msg = MIMEText('Confirm link: https://flask-test-esheshka.herokuapp.com' + link)
-        msg = MIMEText('Confirm link: http://lyceumbells.ru/' + link)
-        msg['Subject'] = 'Confirm email'
-        server.sendmail(sender, ['lyceumbells@gmail.com', form.email.data], str(msg))
-        print(f'Письмо отправленно на {form.email.data}')
+        try:
+            # Создание письма подтверждения почты
+            token = s.dumps(form.email.data, salt='email-confirm')
+            link = url_for('confirm_email', token=token, external=True)
+            server = smtplib.SMTP('smtp.gmail.com', 587)
+            server.starttls()
+            server.login(sender, password)
+            msg = MIMEText('Подтвердите email по ссылке http://lyceumbells.ru' + link)
+            msg['Subject'] = 'Подтвердите email'
+            server.sendmail(sender, ['lyceumbells@gmail.com', form.email.data], str(msg))
+            print(f'Письмо отправленно на {form.email.data}')
+        except:
+            int("Ошибка отправки письма")
+            return render_template('sec_email.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
+                                   error='Что-то пошло не так')
 
         return redirect(url_for('profile'))
 
@@ -969,4 +986,4 @@ def test():
 # port = int(os.environ.get('PORT', 5000))
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, port=4997)
+    socketio.run(app, debug=True, port=5000)

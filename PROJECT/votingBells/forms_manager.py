@@ -5,33 +5,33 @@ from wtforms.validators import DataRequired, Email, Length, EqualTo, re
 
 class Log_in_form(FlaskForm):
     login = StringField('Логин')
-    psw = PasswordField('Password', validators=[DataRequired(), Length(min=6, max=25, message='4 to 25')])
-    remember = BooleanField('Remember', default=0)
-    submit = SubmitField('Log in')
+    psw = PasswordField('Пароль', validators=[DataRequired()])
+    remember = BooleanField('Запомнить меня', default=0)
+    submit = SubmitField('Войти')
 
 class Sign_up_form(FlaskForm):
-    corp_email = StringField('Корпоративная почта', validators=[Email()])
+    corp_email = StringField('Корпоративная почта')
     login = StringField('Логин')
-    psw = PasswordField('Password', validators=[DataRequired(), Length(min=6, max=25, message='4 to 25')])
-    repsw = PasswordField('Rewrite password', validators=[DataRequired(), EqualTo('psw', message='These psw are not same')])
-    submit = SubmitField('Sign up')
+    psw = PasswordField('Пароль', validators=[DataRequired()])
+    repsw = PasswordField('Повтор пароля', validators=[DataRequired()])
+    submit = SubmitField('Зарегистрироваться')
 
 class Sec_email_form(FlaskForm):
-    email = StringField('Почта', validators=[Email()])
-    submit = SubmitField('Sign up')
+    email = StringField('Почта')
+    submit = SubmitField('Отправить письмо')
 
 
 class Add_song(FlaskForm):
-    title = StringField('Title', validators=[DataRequired()])
-    band = StringField('Band', validators=[DataRequired()])
-    submit = SubmitField('Add song')
+    title = StringField('Название', validators=[DataRequired()])
+    band = StringField('Группа', validators=[DataRequired()])
+    submit = SubmitField('Добавить')
 
 class Add_group(FlaskForm):
-    title = StringField('Title', validators=[DataRequired()])
-    submit = SubmitField('Add group')
+    title = StringField('Название', validators=[DataRequired()])
+    submit = SubmitField('Добавить')
 
 class Add_event(FlaskForm):
-    title = StringField('Title')
+    title = StringField('Название')
     tag = SelectField('Тег', choices=[('other', 'Другое'), ('new_group', 'Новая тема'), ('new_songs', 'Новый плейлист')], validators=[DataRequired()])
     text = TextAreaField('Текст', validators=[DataRequired()])
     photo = FileField('Загрузите фото')

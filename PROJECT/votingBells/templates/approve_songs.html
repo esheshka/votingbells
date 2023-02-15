@@ -31,7 +31,7 @@
                 <div>
                     <label class="approve_label">{{ song.band }}</label>
                     {% if song.is_new == 1  %}
-                        <input type=text list=auto>
+                        <input type=text list=autoband>
                     {% else %}
                         <input type=text list=autoband value="{{ song.band }}">
                     {% endif %}

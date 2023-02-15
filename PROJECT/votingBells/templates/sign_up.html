@@ -15,22 +15,18 @@
         {% for field in form if field.name not in ['csrf_token', 'submit'] -%}
             <div>
                 {{ field.label(class='label') }}
-                {% if field.errors %}
-                    {{ field(class="invalid") }}
-                    <span>
-                        {% for e in field.errors %}
-                            {{ e }}
-                        {% endfor %}
-                    </span>
-                {% else %}
-                    <br class="br">
-                    {{ field() }}
-                {% endif %}
+                <br class="br">
+                {{ field() }}
             </div>
         {% endfor %}
 
         <div>
             {{ form.submit() }}
+        </div>
+
+        <br>
+        <div>
+            <a class="button" href="/log_in">Войти</a>
         </div>
     </form>
 {% endblock %}
