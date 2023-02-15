@@ -6,8 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
             button.onclick = () => {
                 const id = button.dataset.id;
                 const approve = button.dataset.approve;
+                const group_name = document.querySelector('#input_name_group' + id).value;
 
-                socket.emit('approve group', [id, approve]);
+                socket.emit('approve group', [id, approve, group_name]);
             };
         });
     });

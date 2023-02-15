@@ -6,8 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
             button.onclick = () => {
                 const id = button.dataset.id;
                 const approve = button.dataset.approve;
+                const song_name = document.querySelector('#input_name_song' + id).value;
+                const band_name = document.querySelector('#input_name_band' + id).value;
 
-                socket.emit('approve song', [id, approve]);
+                socket.emit('approve song', [id, approve, song_name, band_name]);
             };
         });
     });

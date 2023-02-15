@@ -17,11 +17,7 @@
                 <div>
                     <label class="approve_label">{{ group.title }}</label>
                     <br class="br">
-                    {% if group.is_new == 1  %}
-                        <input type=text list=autotitle>
-                    {% else %}
-                        <input type=text list=autotitle value="{{ group.title }}">
-                    {% endif %}
+                    <input type=text id="input_name_group{{ group.id }}" list=autotitle value="{% if group.is_new == 0 %}{{ group.title }}{% endif %}">
                     <datalist id="autotitle">
                         {% for title in titles %}
                             <option>{{ title[0] }}</option>

@@ -17,11 +17,7 @@
                 <div>
                     <label class="approve_label">{{ song.title }}</label>
                     <br class="br">
-                    {% if song.is_new == 1  %}
-                        <input type=text list=autotitle>
-                    {% else %}
-                        <input type=text list=autotitle value="{{ song.title }}">
-                    {% endif %}
+                    <input type=text id="input_name_song{{ song.id }}" list=autotitle value="{% if song.is_new == 0 %}{{ song.title }}{% endif %}">
                     <datalist id="autotitle">
                         {% for title in titles %}
                             <option>{{ title[0] }}</option>
@@ -30,11 +26,7 @@
                 </div>
                 <div>
                     <label class="approve_label">{{ song.band }}</label>
-                    {% if song.is_new == 1  %}
-                        <input type=text list=autoband>
-                    {% else %}
-                        <input type=text list=autoband value="{{ song.band }}">
-                    {% endif %}
+                    <input type=text id="input_name_band{{song.id}}" list=autoband value="{% if song.is_new == 0 %}{{ song.band }}{% endif %}">
                     <datalist id="autoband">
                         {% for band in bands %}
                             <option>{{ band[0] }}</option>

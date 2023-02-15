@@ -433,8 +433,8 @@ def add_song():
         if song.count() > 0:
             if Groups_Songs.query.filter_by(song_id=song.first().id).filter_by(group_id=selected_group).count() > 0:
                 return render_template('add_song.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
-                                       titles=db.session.query(Songs.title).filter(Songs.approved == 1).all(),
-                                       bands=db.session.query(Songs.band).all(), error='Эта песня уже находится в теме')
+                                       titles=list(set(db.session.query(Songs.title).filter(Songs.approved == 1).all())),
+                                       bands=list(set(db.session.query(Songs.band).all())), error='Эта песня уже находится в теме')
             else:
                 song.first().offered_group = selected_group
                 song.first().approved = 0
@@ -453,8 +453,8 @@ def add_song():
             return redirect(url_for('voting'))
 
     return render_template('add_song.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
-                           titles=db.session.query(Songs.title).filter(Songs.approved == 1).all(),
-                           bands=db.session.query(Songs.band).all())
+                           titles=list(set(db.session.query(Songs.title).filter(Songs.approved == 1).all())),
+                           bands=list(set(db.session.query(Songs.band).filter(Songs.approved == 1).all())))
 
 
 # Страница добавления темы
@@ -472,7 +472,7 @@ def add_group():
         group = Groups.query.filter_by(title=form.title.data)
         if group.count() > 0:
             return render_template('add_group.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
-                                   titles=db.session.query(Groups.title).filter(Groups.approved == 1).all(),
+                                   titles=list(set(db.session.query(Groups.title).filter(Groups.approved == 1).all())),
                                    error='Эта тема уже добавленна')
         else:
             new_group = Groups(title=form.title.data)
@@ -484,7 +484,7 @@ def add_group():
             return redirect(url_for('voting'))
 
     return render_template('add_group.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
-                           titles=db.session.query(Groups.title).filter(Groups.approved == 1).all())
+                           titles=list(set(db.session.query(Groups.title).filter(Groups.approved == 1).all())))
 
 
 # Отправляем список всех предложенных песен
@@ -495,8 +495,8 @@ def approve_songs():
     if current_user.get_position() in ['chief', 'admin']:
         return render_template('approve_songs.html', voting_songs_or_groups=voting_songs_or_groups,
                                songs=Songs.query.filter_by(approved=0).order_by(Songs.likes.desc()).all(),
-                               titles=db.session.query(Songs.title).filter(Songs.approved == 1).all(),
-                               bands=db.session.query(Songs.band).all())
+                               titles=list(set(db.session.query(Songs.title).filter(Songs.approved == 1).all())),
+                               bands=list(set(db.session.query(Songs.band).filter(Songs.approved == 1).all())))
     else:
         return redirect(url_for('voting'))
 
@@ -509,27 +509,39 @@ def approve_groups():
     if current_user.get_position() in ['chief', 'admin']:
         return render_template('approve_groups.html', voting_songs_or_groups=voting_songs_or_groups,
                                groups=Groups.query.filter_by(approved=0).order_by(Groups.likes.desc()).all(),
-                               titles=db.session.query(Groups.title).filter(Groups.approved == 1).all())
+                               titles=list(set(db.session.query(Groups.title).filter(Groups.approved == 1).all())))
     else:
         return redirect(url_for('voting'))
 
 
 # JS функция подтверждения добавления песни
-# data <=> [id, choice]
+# data <=> [id, choice, song_name, band_name]
 @socketio.on('approve song')
 def approve_song(data):
     song = Songs.query.filter_by(id=data[0]).first()
     approved = 0
     song.approved = 1
-    if data[1] == 'Yes':
-        approved = 1
-        song.is_new = 0
-        gs = Groups_Songs(song_id=data[0], group_id=selected_group)
-        db.session.add(gs)
-    elif Groups_Songs.query.filter_by(song_id=data[0]).count() == 0:
-        return_bells_by_song(data[0])
-        song.recent_bells = 0
-        db.session.delete(song)
+    ap_song_id = Songs.query.filter_by(title=data[2], band=data[3]).first()
+    if ap_song_id != None:
+        ap_song_id = ap_song_id.id
+    else:
+        ap_song_id = -1
+
+    if data[2] != '' and data[3] != '':
+        if data[1] == 'Yes' and Groups_Songs.query.filter_by(song_id=ap_song_id, group_id=selected_group).count() == 0:
+            song.title = data[2]
+            song.band = data[3]
+            approved = 1
+            song.is_new = 0
+            gs = Groups_Songs(song_id=data[0], group_id=selected_group)
+            db.session.add(gs)
+        elif Groups_Songs.query.filter_by(song_id=data[0]).count() == 0:
+            return_bells_by_song(data[0])
+            song.recent_bells = 0
+            print(f"Удаленна песня {song.title} {song.band}")
+            db.session.delete(song)
+    else:
+        db.session.rollback()
 
     db.session.flush()
     db.session.commit()
@@ -540,18 +552,24 @@ def approve_song(data):
 
 
 # JS функция подтверждения добавления темы
-# data <=> [id, choice]
+# data <=> [id, choice, group_name]
 @socketio.on('approve group')
 def approve_group(data):
+    print(data)
     group = Groups.query.filter_by(id=data[0]).first()
     approved = 1
     group.approved = 1
     group.is_new = 0
-    if data[1] == 'No':
+
+    if data[1] == 'No' or Groups.query.filter_by(title=data[2]).count() != 0 or data[2] == '':
         approved = 0
         return_bells_by_group(data[0])
         group.recent_bells = 0
+        print(f'Удаленна {group.title}')
         db.session.delete(group)
+
+    if data[1] == 'Yes' and data[2] == '':
+        db.session.rollback()
 
     db.session.flush()
     db.session.commit()
@@ -904,7 +922,7 @@ def notifications():
                                                    (Notifications.access_level == position_groups.get(current_user.get_position())))
     else:
         notifications = Notifications.query
-    notifications = notifications.order_by(Notifications.time.desc()).all()
+    notifications = notifications.order_by(Notifications.id.desc()).all()
 
     return render_template('notifications.html', voting_songs_or_groups=voting_songs_or_groups, notifications=notifications)
 
