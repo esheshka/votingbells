@@ -165,7 +165,6 @@ selected_group = 1
 # Определяем пользователя
 @login_manager.user_loader
 def load_user(user_id):
-    print('load_user ' + user_id)
     return User_login().fromDB(Users.query.filter_by(id=user_id).first())
 
 # Главная страница, перебрасывающая нас на проходяещее голосование
@@ -387,9 +386,6 @@ def likes_groups(data):
         group = Groups.query.filter_by(id=data[0]).first()
         group.likes += int(data[1])
         group.recent_likes += int(data[1])
-
-        db.session.flush()
-        db.session.commit()
     else:
         if current_user.get_bells() == 0:
             return 0
@@ -401,8 +397,8 @@ def likes_groups(data):
         group.likes += int(data[1])
         group.recent_likes += int(data[1])
 
-        db.session.flush()
-        db.session.commit()
+    db.session.flush()
+    db.session.commit()
 
     # Вычисление данных для отправки пользователям
     count = Groups.query.filter_by(id=data[0]).first().recent_likes
@@ -434,7 +430,7 @@ def add_song():
             if Groups_Songs.query.filter_by(song_id=song.first().id).filter_by(group_id=selected_group).count() > 0:
                 return render_template('add_song.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
                                        titles=list(set(db.session.query(Songs.title).filter(Songs.approved == 1).all())),
-                                       bands=list(set(db.session.query(Songs.band).all())), error='Эта песня уже находится в теме')
+                                       bands=list(set(db.session.query(Songs.band).filter(Songs.approved == 1).all())), error='Эта песня уже находится в теме')
             else:
                 song.first().offered_group = selected_group
                 song.first().approved = 0
@@ -661,6 +657,19 @@ def return_bells_by_group(id):
     db.session.commit()
 
 
+# Создание письма подтверждения почты
+def send_letter(email):
+    print('К созданию письма приступили')
+    token = s.dumps(email, salt='email-confirm')
+    link = url_for('confirm_corp_email', token=token, external=True)
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.starttls()
+    server.login(sender, password)
+    msg = MIMEText('Подтвердите email по ссылке http://lyceumbells.ru' + link)
+    msg['Subject'] = 'Подтвердите email'
+    server.sendmail(sender, ['lyceumbells@gmail.com', email], str(msg))
+    print(f'Письмо отправленно на {email}')
+
 # Регистрация
 @app.route("/sign_up", methods=("POST", "GET"))
 def sign_up():
@@ -669,9 +678,16 @@ def sign_up():
     if form.validate_on_submit():
         # Нахождение пользователя в списке учащихся
         same_corp_email = Users.query.filter_by(corp_email=form.corp_email.data)
+        if same_corp_email.filter_by(confirmed=0).count() != 0:
+            db.session.delete(same_corp_email.first())
+            db.session.flush()
+            db.session.commit()
+
         corp_user = Corp_Users.query.filter_by(email=form.corp_email.data)
         same_login = Users.query.filter_by(login=form.login.data)
-        if same_corp_email.count() != 0:
+
+        #Проверка на корректность введеных данных
+        if same_corp_email.filter_by(confirmed=1).count() != 0:
             return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
                                    error='Вы уже регистрировались')
         elif corp_user.count() == 0:
@@ -685,17 +701,7 @@ def sign_up():
                                    error='Логин занят')
         else:
             try:
-                # Создание письма подтверждения почты
-                print('К созданию письма приступили')
-                token = s.dumps(form.corp_email.data, salt='email-confirm')
-                link = url_for('confirm_corp_email', token=token, external=True)
-                server = smtplib.SMTP('smtp.gmail.com', 587)
-                server.starttls()
-                server.login(sender, password)
-                msg = MIMEText('Подтвердите email по ссылке http://lyceumbells.ru' + link)
-                msg['Subject'] = 'Подтвердите email'
-                server.sendmail(sender, ['lyceumbells@gmail.com', form.corp_email.data], str(msg))
-                print(f'Письмо отправленно на {form.corp_email.data}')
+                send_letter(form.corp_email.data)
             except:
                 print("Ошибка отправки письма")
                 return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
@@ -726,6 +732,8 @@ def sign_up():
     return render_template('sign_up.html', voting_songs_or_groups=voting_songs_or_groups, form=form)
 
 
+
+
 # Страница подключения второй почты
 @app.route("/sec_email", methods=("POST", "GET"))
 def sec_email():
@@ -733,16 +741,7 @@ def sec_email():
     form = Sec_email_form()
     if form.validate_on_submit():
         try:
-            # Создание письма подтверждения почты
-            token = s.dumps(form.email.data, salt='email-confirm')
-            link = url_for('confirm_email', token=token, external=True)
-            server = smtplib.SMTP('smtp.gmail.com', 587)
-            server.starttls()
-            server.login(sender, password)
-            msg = MIMEText('Подтвердите email по ссылке http://lyceumbells.ru' + link)
-            msg['Subject'] = 'Подтвердите email'
-            server.sendmail(sender, ['lyceumbells@gmail.com', form.email.data], str(msg))
-            print(f'Письмо отправленно на {form.email.data}')
+            send_letter(form.email.data)
         except:
             int("Ошибка отправки письма")
             return render_template('sec_email.html', voting_songs_or_groups=voting_songs_or_groups, form=form,
@@ -984,24 +983,17 @@ def return_bells():
     return redirect(url_for('voting'))
 
 
+import zipfile
 @app.route('/test', methods=['GET', 'POST'])
 def test():
-    print('К созданию письма приступили')
-    token = s.dumps('as.yushinskiy@gmail.com', salt='email-confirm')
-    link = url_for('confirm_corp_email', token=token, external=True)
-    server = smtplib.SMTP('smtp.gmail.com')
-    server.starttls()
-    server.login(sender, password)
-    # msg = MIMEText('Confirm link: https://flask-test-esheshka.herokuapp.com/' + link)
-    msg = MIMEText('Confirm link: http://127.0.0.1:5000' + link)
-    msg['Subject'] = 'Confirm email'
-    server.sendmail(sender, ['lyceumbells@gmail.com', 'esheshka@yandex.ru'], str(msg))
-    print(f'Письмо отправленно на as.yushinskiy@gmail.com')
-
-    return render_template('test.html')
+    print(test)
+    # zfile = zipfile.ZipFile('test.zip', 'w')
+    # for bell in db.session.query(Songs.bell).filter(Songs.approved == 1).all():
+    # for bell in [song_bell(1)]:
+    #     if bell != None:
+    #         zfile.write(os.path.join(bell), bell, compress_type = zipfile.ZIP_DEFLATED)
 
 
-# port = int(os.environ.get('PORT', 5000))
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, port=5000)
