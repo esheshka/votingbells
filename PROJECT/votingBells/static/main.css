@@ -92,11 +92,12 @@ body {
 
 a.menu_member {
     display: block;
-    background-color: grey;
-    margin: 20px;
-    background: gray;
-    padding: 20px;
+    height: 50px;
+    margin: 10px;
+    padding: 10px;
+
     font-size: 30px;
+    background: gray;
     color: black;
     border-radius: 10px;
 }
@@ -152,13 +153,15 @@ input.string {
     min-width: min(800px, 100%);
     background: white;
     padding: 10px 20px 20px 20px;
-    box-shadow: 2px 2px 10px black;
+    border: 2px solid;
+    box-shadow: 5px 5px 3px black;
     font-size: 30px;
 }
 .form span {
     font-size: 30px;
     background: rgba(255, 255, 255, 1);
-    box-shadow: inset 2px 2px 10px black;
+    border: 2px solid;
+    box-shadow: inset 5px 5px 3px black;
     margin: 20px;
     padding: 10px;
     width: 200px;
@@ -175,7 +178,8 @@ input.string {
 }
 .form input {
     background: rgba(200, 200, 200, 1);
-    box-shadow: inset 2px 2px 10px black;
+    border: 2px solid;
+    box-shadow: inset 5px 5px 3px black;
     padding: 10px;
 }
 .photo_label {
@@ -184,11 +188,11 @@ input.string {
 }
 .photo_label span {
     display: inline-block;
-    border: 3px solid;
     border-radius: 10px;
     font-size: 30px;
     background: rgba(255, 255, 255, 1);
-    box-shadow: 2px 2px 10px black;
+    border: 2px solid;
+    box-shadow: inset 5px 5px 3px black;
     margin: 20px;
     padding: 10px;
     max-width: calc(100% - 50px);
@@ -197,7 +201,8 @@ input.string {
 .form button, #submit {
     font-size: 30px;
     background: rgba(255, 255, 255, 1);
-    box-shadow: 2px 2px 10px black;
+    border: 2px solid;
+    box-shadow: 5px 5px 3px black;
     padding: 10px;
 }
 .label {
@@ -209,7 +214,8 @@ input.string {
     font-size: 20px;
     padding: 10px;
     background: rgba(200, 200, 200, 1);
-    box-shadow: inset 2px 2px 10px black;
+    border: 2px solid;
+    box-shadow: inset 5px 5px 3px black;
     resize: vertical;
 }
 
@@ -229,7 +235,8 @@ select {
 
 div.total {
     background: rgba(255, 255, 255, 1);
-    box-shadow: 2px 2px 10px black;
+    border: 2px solid;
+    box-shadow: 5px 5px 3px black;
     margin: 20px 0;
 
     margin-left: auto;
@@ -239,16 +246,19 @@ div.total {
 }
 
 .approved {
-    position: relative;
-    margin: 20px 20px 20px 20px;
-    min-width: 200px;
-    width: min(calc(100% - 40px), max(calc(50% - 42px), 408px));
-/*    border: solid 3px; */
-/*    border-radius: 10px; */
-    border-right: none;
-    padding: 20px;
     display: inline-block;
-    box-shadow: inset 2px 2px 10px black;
+    position: relative;
+    width: min(calc(100% - 42px), max(calc(50% - 42px), 406px));
+    min-width: 200px;
+
+    margin: 20px 20px 20px 20px;
+    padding: 20px;
+
+/*    border: solid 3px;
+    border-radius: 10px;
+    border-right: none;*/
+    border: 2px solid;
+    box-shadow: inset 5px 5px 3px black;
     background: rgba(200, 200, 200, 1);
 /*
     background: -moz-linear-gradient(left, rgba(205,42,214,1) 0%, rgba(125,185,232,0) 100%);
@@ -258,7 +268,9 @@ div.total {
 */
 }
 .approved.no {
-    box-shadow: inset 2px 2px 10px red;
+    box-shadow: inset 5px 5px 3px black;
+    border: 2px solid;
+    border-color: red;
 }
 
 .approved a {
@@ -305,6 +317,7 @@ button.like {
     margin: 0px;
     font-size: 25px;
     box-shadow: none;
+    border: none;
 }
 button.like.dis {
     left: 50%;
@@ -340,7 +353,7 @@ hr.new_title {
 }
 .title.mini {
     text-transform: none;
-    font-size: 25px;
+    font-size: 20px;
     font-family: Arial, 'Helventica Neue', Helventica, sans-serif;
 }
 
@@ -358,10 +371,12 @@ hr.new_title {
     position: relative;
     margin-left: auto;
     margin-right: auto;
-    max-width: 800px;
+
+    max-width: max(800px, 50%);
     padding: 1px 20px;
     background: white;
-    box-shadow: 2px 2px 10px black;
+    border: 2px solid;
+    box-shadow: 5px 5px 3px black;
 }
 .event_member a.event {
     position: absolute;
@@ -377,8 +392,10 @@ hr.new_title {
 .event_member > div {
     margin: 20px 0;
     padding: 9px;
+
     background: rgba(200, 200, 200, 1);
-    box-shadow: inset 2px 2px 10px black;
+    border: 2px solid;
+    box-shadow: inset 5px 5px 3px black;
 }
 .event_img {
     display: block;
@@ -395,7 +412,8 @@ input, textarea, select, button {
     margin: 10px 0px;
     font-size: 25px;
     background: rgba(200, 200, 200, 1);
-    box-shadow: inset 2px 2px 10px gray;
+    border: 2px solid;
+    box-shadow: inset 5px 5px 3px black;
 }
 .approve_label {
     padding: 5px;
@@ -420,7 +438,8 @@ button.approve_button {
     max-width: min(100%, max(40%, 700px));
     background: white;
     padding: 10px 20px 20px 20px;
-    box-shadow: 2px 2px 10px black;
+    border: 2px solid;
+    box-shadow: 5px 5px 3px black;
     font-size: 30px;
 }
 #info .info-title {
@@ -434,11 +453,14 @@ button.approve_button {
     margin: 10px 0px;
     font-size: 25px;
     background: rgba(200, 200, 200, 1);
-    box-shadow: inset 2px 2px 10px black;
+    border: 2px solid;
+    box-shadow: inset 5px 5px 3px black;
     padding: 10px;
 }
 #info .info-meaning span {
-    margin: 0 10px;
+    display: inline-block;
+    background: rgba(200, 200, 0, 0.5);
+    margin: 5px 10px;
 }
 
 .error {
@@ -455,10 +477,11 @@ button.approve_button {
     text-align: center;
     align-items: center;
     justify-content: center;
-    justify-content: center
     font-size: 25px;
+
     background: red;
-    box-shadow: inset 2px 2px 10px black;
+    border: 2px solid;
+    box-shadow: inset 5px 5px 3px black;
 
     z-index: 1;
 }
@@ -470,21 +493,22 @@ button.approve_button {
     justify-content: center;
 }
 a.button {
-    position: relative;
-    display: flex;
-    text-align: center;
-    align-items: center;
-    justify-content: center;
-
-    font-size: 30px;
-    background: rgba(255, 255, 255, 1);
-    box-shadow: 2px 2px 10px black;
-    padding: 10px;
-    color: black;
-
     width: min(100%, max(200px, 50%));
     margin: 10px 0px;
 
     margin-left: auto;
     margin-right: auto;
+
+    position: relative;
+    display: flex;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+
+    font-size: 30px;
+    background: rgba(255, 255, 255, 1);
+    border: 2px solid;
+    box-shadow: 5px 5px 3px black;
+    color: black;
 }

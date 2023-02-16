@@ -46,9 +46,7 @@
         <span class="info-title">Темы </span>
         <br class="br">
         <div class="info-meaning">
-            {% for group in groups %}
-                <span>{{ group }}</span>
-            {% endfor %}
+            {% for group in groups %}"{{ group }}" {% endfor %}
         </div>
     </div>
 {% endblock %}

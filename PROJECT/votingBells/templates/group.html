@@ -11,9 +11,7 @@
         <span class="info-title">Песни</span>
         <br class="br">
         <div class="info-meaning">
-            {% for song in songs %}
-                <span>{{ song.title }}</span>
-            {% endfor %}
+            {% for song in songs %}<span>"{{ song.title }}"</span>{% endfor %}
         </div>
     </div>
 {% endblock %}
