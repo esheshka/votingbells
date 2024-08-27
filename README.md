@@ -1,2 +1,1 @@
-# votingbells
-website for voting for bells
+# Сайт для голосований - Учебный проект Лицея НИУ ВШЭ
